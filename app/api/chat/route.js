@@ -1,21 +1,27 @@
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 
-const client = new Anthropic();
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(request) {
   try {
     const { system, messages } = await request.json();
 
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+    const response = await client.chat.completions.create({
+      model: "gpt-4o-mini",
       max_tokens: 1000,
-      system,
-      messages,
+      messages: [
+        { role: "system", content: system },
+        ...messages,
+      ],
     });
 
-    return Response.json(response);
+    // Format response to match what the frontend expects
+    const reply = response.choices[0]?.message?.content || "";
+    return Response.json({
+      content: [{ text: reply }],
+    });
   } catch (error) {
-    console.error("Anthropic API error:", error);
+    console.error("OpenAI API error:", error);
     return Response.json(
       { error: "Failed to get response from AI" },
       { status: 500 }
