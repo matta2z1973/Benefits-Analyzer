@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "openai": "^4.78.0",
+    "pdf-parse": "^1.1.1",
     "next": "^15.3.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"

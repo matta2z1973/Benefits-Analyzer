@@ -92,20 +92,20 @@ function estimateAnnualCost(profile, planKey) {
   const tier = profile.coverageTier;
   const isFamily = tier !== "employee";
   const premiumKey = tier === "employee" ? "employee" : tier === "empChildren" ? "empChildren" : tier === "empSpouse" ? "empSpouse" : "family";
-  
+
   const annualPremium = PREMIUMS_BIWEEKLY[planKey][premiumKey] * 26;
   const deductible = isFamily ? plan.deductible.family : plan.deductible.individual;
   const oopMax = isFamily ? plan.oopMax.family : plan.oopMax.individual;
-  
+
   let totalAllowedCharges = 0;
   let totalMemberCost = 0;
   let deductibleSpent = 0;
-  
+
   const addCharge = (allowedAmount, serviceConfig, count = 1) => {
     for (let i = 0; i < count; i++) {
       totalAllowedCharges += allowedAmount;
       if (totalMemberCost >= oopMax) continue;
-      
+
       if (serviceConfig.type === "free") {
         // No cost
       } else if (serviceConfig.type === "copay" && !serviceConfig.deductibleApplies) {
@@ -151,19 +151,19 @@ function estimateAnnualCost(profile, planKey) {
   addCharge(AVG_COSTS.mentalHealthVisit, plan.mentalHealthOutpatient, profile.mentalHealthVisits || 0);
   // Physical therapy
   addCharge(AVG_COSTS.physicalTherapyVisit, plan.physicalTherapy, profile.physicalTherapyVisits || 0);
-  
+
   // Maternity
   if (profile.expectingBaby) {
     addCharge(AVG_COSTS.maternityTotal * 0.6, plan.maternityDelivery, 1);
     addCharge(AVG_COSTS.maternityTotal * 0.4, plan.hospitalFacility, 1);
   }
-  
+
   // Surgery
   if (profile.expectingSurgery) {
     addCharge(AVG_COSTS.outpatientSurgery, plan.outpatientSurgeryFacility, 1);
     addCharge(AVG_COSTS.surgeonFees, plan.surgeonFees, 1);
   }
-  
+
   // Hospital stays
   if (profile.hospitalDays > 0) {
     addCharge(AVG_COSTS.hospitalDayFacility * profile.hospitalDays, plan.hospitalFacility, 1);
@@ -190,7 +190,7 @@ function estimateAnnualCost(profile, planKey) {
       totalMemberCost = Math.min(totalMemberCost, oopMax);
     }
   };
-  
+
   addRx(AVG_COSTS.genericRxMonth, plan.rx.generic.maintenance, (profile.genericMeds || 0) * 12);
   addRx(AVG_COSTS.preferredBrandRxMonth, plan.rx.preferredBrand.maintenance, (profile.brandMeds || 0) * 12);
   addRx(AVG_COSTS.nonPreferredBrandRxMonth, plan.rx.nonPreferredBrand.maintenance, (profile.nonPreferredMeds || 0) * 12);
@@ -397,12 +397,12 @@ function ToggleChip({ selected, label, onClick }) {
   );
 }
 
-// ─── AI CHAT ─────────────────────────────────────────────────
-function AIChat({ profile, results }) {
+// ─── INLINE CUSTOMIZED ANALYSIS CHAT ─────────────────────────
+function CustomizedAnalysisChat({ profile, results }) {
+  const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
   const chatRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -410,7 +410,9 @@ function AIChat({ profile, results }) {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
   }, [messages]);
 
-  const systemPrompt = `You are a friendly, knowledgeable benefits advisor for Greenhill School. You help faculty and staff choose between two medical plans.
+  const winner = results.copay.totalOutOfPocket < results.cdhp.totalOutOfPocket ? "copay" : "cdhp";
+
+  const systemPrompt = `You are a guided benefits advisor for Greenhill School employees. Your job is to refine the user's cost estimate by gathering specific details about their healthcare needs that the basic calculator could not capture.
 
 PLAN DETAILS:
 
@@ -449,26 +451,39 @@ CDHP PLAN (with HSA):
 
 Both plans use BCBS PPO network. No referrals needed. Same preventive care (free). CVS Caremark for Rx. Quantum Health care coordinators available free.
 
-USER'S SITUATION:
+USER'S CURRENT PROFILE:
 ${JSON.stringify(profile, null, 2)}
 
-CALCULATOR RESULTS:
-Co-Pay estimated total: $${results?.copay?.totalOutOfPocket?.toLocaleString() || "N/A"}
-CDHP estimated total: $${results?.cdhp?.totalOutOfPocket?.toLocaleString() || "N/A"}
+CURRENT CALCULATOR RESULTS:
+Co-Pay Plan estimated total: $${results?.copay?.totalOutOfPocket?.toLocaleString() || "N/A"}
+CDHP Plan estimated total: $${results?.cdhp?.totalOutOfPocket?.toLocaleString() || "N/A"}
+Currently recommended plan: ${PLANS[winner].name}
 
 INSTRUCTIONS:
-- Be warm, conversational, and jargon-free. Explain insurance terms simply.
-- Give specific dollar comparisons when possible.
-- If asked about a specific drug, explain the tier system and suggest they check caremark.com.
-- If they ask about spouse plan comparison, help them think through the key factors (premium, deductible, network).
-- Always note this is an estimate and they should contact HR or Quantum Health for official guidance.
-- Keep responses concise (2-4 paragraphs max). Use plain language.
-- Do NOT use markdown formatting. Write in plain conversational text.`;
+You are conducting a guided interview to refine the estimate. Follow this flow:
 
-  const sendMessage = async () => {
-    if (!input.trim() || loading) return;
-    const userMsg = input.trim();
-    setInput("");
+1. Start by warmly introducing yourself and explaining you will ask 3-5 targeted questions. Then immediately ask the FIRST question about specific medication names and monthly costs (e.g., "What medications do you or your family members take? For each one, do you know the monthly cost or whether it's generic vs brand-name?").
+
+2. After they respond, ask about any planned procedures — surgery type, expected cost range if known, whether it's inpatient or outpatient.
+
+3. Ask about chronic conditions that require ongoing treatment (e.g., diabetes management, asthma, recurring physical therapy).
+
+4. If they indicated pregnancy, ask about pregnancy specifics — likelihood of C-section, any known complications or high-risk factors, expected additional monitoring.
+
+5. After gathering 3-5 pieces of specific information, provide a REVISED cost estimate for BOTH plans. Show:
+   - Revised Co-Pay Plan estimated annual cost
+   - Revised CDHP Plan estimated annual cost
+   - Which plan you now recommend and why
+   - A brief explanation of what changed from the original estimate
+
+Be warm, conversational, and jargon-free. Keep responses concise (2-4 paragraphs max). Use plain language.
+Do NOT use markdown formatting. Write in plain conversational text.
+Always note this is still an estimate and they should contact HR or Quantum Health for official guidance.`;
+
+  const sendMessage = async (messageText) => {
+    const userMsg = (messageText || input).trim();
+    if (!userMsg || loading) return;
+    if (!messageText) setInput("");
     const newMessages = [...messages, { role: "user", content: userMsg }];
     setMessages(newMessages);
     setLoading(true);
@@ -492,36 +507,70 @@ INSTRUCTIONS:
     setLoading(false);
   };
 
+  const handleOpen = async () => {
+    setIsOpen(true);
+    // Automatically send the first message to kick off the guided interview
+    setLoading(true);
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system: systemPrompt,
+          messages: [{ role: "user", content: "Hi, I'd like a more customized analysis of my benefits options." }],
+        }),
+      });
+      const data = await response.json();
+      const reply = data.content?.map(b => b.text || "").join("") || "Hello! I'd be happy to help refine your benefits estimate. Could you start by telling me about any medications you or your family members take regularly?";
+      setMessages([
+        { role: "user", content: "Hi, I'd like a more customized analysis of my benefits options." },
+        { role: "assistant", content: reply },
+      ]);
+    } catch (err) {
+      setMessages([
+        { role: "user", content: "Hi, I'd like a more customized analysis of my benefits options." },
+        { role: "assistant", content: "Hello! I'd be happy to help refine your benefits estimate. Let's start with medications — what prescriptions do you or your family members take regularly? For each one, do you know whether it's a generic or brand-name, and roughly what you pay per month?" },
+      ]);
+    }
+    setLoading(false);
+  };
+
+  const suggestedQuestions = [
+    "I take Humira for rheumatoid arthritis",
+    "I'm planning a knee replacement surgery",
+    "I have diabetes and need regular monitoring",
+    "My wife is pregnant and it may be high-risk",
+  ];
+
   if (!isOpen) {
     return (
-      <button onClick={() => setIsOpen(true)} style={{
-        position: "fixed", bottom: 24, right: 24,
-        width: 60, height: 60, borderRadius: 30,
-        background: COLORS.green700, border: "none",
-        cursor: "pointer", boxShadow: "0 4px 20px rgba(27,60,40,0.3)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        transition: "transform 0.2s", zIndex: 1000,
-      }}>
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
-      </button>
+      <div style={{ marginTop: 32, textAlign: "center" }}>
+        <button onClick={handleOpen} style={{
+          padding: "20px 32px", borderRadius: 16, border: `2px solid ${COLORS.green600}`,
+          background: COLORS.green50, cursor: "pointer", width: "100%", maxWidth: 480,
+          transition: "all 0.2s",
+        }}>
+          <div style={{
+            fontFamily: "'Libre Baskerville', Georgia, serif",
+            fontSize: 17, fontWeight: 700, color: COLORS.green900, marginBottom: 6,
+          }}>Want a More Customized Analysis?</div>
+          <div style={{
+            fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: COLORS.text500, lineHeight: 1.4,
+          }}>Answer a few targeted questions to refine your estimate</div>
+        </button>
+      </div>
     );
   }
 
   return (
     <div style={{
-      position: "fixed", bottom: 24, right: 24,
-      width: 380, maxWidth: "calc(100vw - 32px)", height: 520, maxHeight: "calc(100vh - 48px)",
-      background: "#fff", borderRadius: 16,
-      boxShadow: "0 8px 40px rgba(27,60,40,0.2)",
-      display: "flex", flexDirection: "column",
-      zIndex: 1000, overflow: "hidden",
-      border: `1px solid ${COLORS.border}`,
+      marginTop: 32, borderRadius: 16, overflow: "hidden",
+      border: `1px solid ${COLORS.green600}`,
+      background: "#fff",
     }}>
       {/* Header */}
       <div style={{
-        padding: "14px 18px", background: COLORS.green900,
+        padding: "14px 20px", background: COLORS.green900,
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -529,7 +578,7 @@ INSTRUCTIONS:
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
           <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, color: "#fff" }}>
-            Benefits Advisor Chat
+            Customized Analysis
           </span>
         </div>
         <button onClick={() => setIsOpen(false)} style={{
@@ -537,65 +586,59 @@ INSTRUCTIONS:
           color: COLORS.sage, fontSize: 20, lineHeight: 1,
         }}>×</button>
       </div>
-      
-      {/* Messages */}
+
+      {/* Messages area */}
       <div ref={chatRef} style={{
-        flex: 1, overflowY: "auto", padding: 16,
+        maxHeight: 420, overflowY: "auto", padding: 16,
         display: "flex", flexDirection: "column", gap: 12,
+        background: COLORS.cream,
       }}>
-        {messages.length === 0 && (
-          <div style={{
-            padding: 16, background: COLORS.green50, borderRadius: 12,
-            fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: COLORS.text700, lineHeight: 1.6,
-          }}>
-            Hi! I'm here to help you understand your Greenhill benefits options. I already know the details you entered in the calculator. Ask me anything — for example:
-            <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
-              {[
-                "What if I need surgery next year?",
-                "How does the HSA work exactly?",
-                "My spouse has coverage too — which is better?",
-                "I take a brand-name medication monthly",
-              ].map((q, i) => (
-                <button key={i} onClick={() => { setInput(q); }} style={{
-                  textAlign: "left", padding: "8px 12px", borderRadius: 8,
-                  background: "#fff", border: `1px solid ${COLORS.border}`,
-                  cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
-                  fontSize: 12, color: COLORS.green700,
-                }}>"{q}"</button>
-              ))}
-            </div>
-          </div>
-        )}
-        {messages.map((m, i) => (
+        {messages.filter(m => m.role !== "user" || m.content !== "Hi, I'd like a more customized analysis of my benefits options.").map((m, i) => (
           <div key={i} style={{
             alignSelf: m.role === "user" ? "flex-end" : "flex-start",
             maxWidth: "85%", padding: "10px 14px", borderRadius: 12,
-            background: m.role === "user" ? COLORS.green700 : COLORS.green50,
+            background: m.role === "user" ? COLORS.green700 : "#fff",
             color: m.role === "user" ? "#fff" : COLORS.text700,
             fontFamily: "'DM Sans', sans-serif", fontSize: 13, lineHeight: 1.6,
             whiteSpace: "pre-wrap",
+            border: m.role === "assistant" ? `1px solid ${COLORS.border}` : "none",
           }}>{m.content}</div>
         ))}
         {loading && (
           <div style={{
             alignSelf: "flex-start", padding: "10px 14px", borderRadius: 12,
-            background: COLORS.green50, fontFamily: "'DM Sans', sans-serif",
+            background: "#fff", fontFamily: "'DM Sans', sans-serif",
             fontSize: 13, color: COLORS.text500,
+            border: `1px solid ${COLORS.border}`,
           }}>Thinking...</div>
+        )}
+
+        {/* Suggested questions - only show if we have <= 2 messages (just the intro exchange) */}
+        {messages.length <= 2 && !loading && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
+            {suggestedQuestions.map((q, i) => (
+              <button key={i} onClick={() => sendMessage(q)} style={{
+                padding: "8px 14px", borderRadius: 20,
+                background: "#fff", border: `1px solid ${COLORS.green600}`,
+                cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                fontSize: 12, color: COLORS.green700, transition: "all 0.2s",
+              }}>"{q}"</button>
+            ))}
+          </div>
         )}
       </div>
 
       {/* Input */}
       <div style={{
         padding: "12px 16px", borderTop: `1px solid ${COLORS.border}`,
-        display: "flex", gap: 8,
+        display: "flex", gap: 8, background: "#fff",
       }}>
         <input
           ref={inputRef}
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === "Enter" && sendMessage()}
-          placeholder="Ask about your benefits..."
+          placeholder="Type your answer..."
           style={{
             flex: 1, padding: "10px 14px", borderRadius: 10,
             border: `1px solid ${COLORS.border}`, outline: "none",
@@ -603,13 +646,384 @@ INSTRUCTIONS:
             color: COLORS.text900,
           }}
         />
-        <button onClick={sendMessage} disabled={loading || !input.trim()} style={{
+        <button onClick={() => sendMessage()} disabled={loading || !input.trim()} style={{
           padding: "10px 16px", borderRadius: 10, border: "none",
           background: COLORS.green700, color: "#fff", cursor: "pointer",
           fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600,
           opacity: loading || !input.trim() ? 0.5 : 1,
         }}>Send</button>
       </div>
+    </div>
+  );
+}
+
+// ─── SPOUSE PLAN COMPARISON ──────────────────────────────────
+function SpousePlanComparison({ profile, results }) {
+  const [activeTab, setActiveTab] = useState("upload"); // "upload" or "manual"
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const [spousePlan, setSpousePlan] = useState(null);
+  const [manualForm, setManualForm] = useState({
+    planName: "",
+    monthlyPremium: "",
+    deductible: "",
+    oopMax: "",
+    copay: "",
+    hsaContribution: false,
+    hsaAmount: "",
+  });
+
+  const winner = results.copay.totalOutOfPocket < results.cdhp.totalOutOfPocket ? "copay" : "cdhp";
+  const winnerResult = results[winner];
+  const winnerPlan = PLANS[winner];
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadError("");
+    setSpousePlan(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch("/api/parse-plan", {
+        method: "POST",
+        body: formData,
+      });
+      if (!response.ok) throw new Error("Failed to parse plan document");
+      const data = await response.json();
+      setSpousePlan({
+        planName: data.planName || "Spouse's Plan",
+        annualPremium: data.monthlyPremium ? data.monthlyPremium * 12 : 0,
+        deductible: data.deductible || 0,
+        oopMax: data.oopMax || 0,
+        copay: data.copay || 0,
+        hsaContribution: data.hsaContribution || 0,
+      });
+    } catch (err) {
+      setUploadError("Could not parse the plan document. Please try entering details manually.");
+    }
+    setUploading(false);
+  };
+
+  const handleManualSubmit = () => {
+    setSpousePlan({
+      planName: manualForm.planName || "Spouse's Plan",
+      annualPremium: (parseFloat(manualForm.monthlyPremium) || 0) * 12,
+      deductible: parseFloat(manualForm.deductible) || 0,
+      oopMax: parseFloat(manualForm.oopMax) || 0,
+      copay: parseFloat(manualForm.copay) || 0,
+      hsaContribution: manualForm.hsaContribution ? (parseFloat(manualForm.hsaAmount) || 0) : 0,
+    });
+  };
+
+  const updateManual = (key, val) => setManualForm(f => ({ ...f, [key]: val }));
+
+  // Estimate costs if switching to spouse's plan:
+  // Greenhill premium drops to $0, lose Greenhill HSA contribution
+  // Use spouse plan's premium + estimated medical costs (rough approximation)
+  const spouseEstimatedTotal = spousePlan
+    ? spousePlan.annualPremium + winnerResult.estimatedMedicalCosts - spousePlan.hsaContribution
+    : null;
+
+  const greenhillEstimatedTotal = winnerResult.totalOutOfPocket;
+
+  const inputStyle = {
+    width: "100%", padding: "10px 14px", borderRadius: 10,
+    border: `1px solid ${COLORS.border}`, outline: "none",
+    fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+    color: COLORS.text900,
+  };
+
+  const labelStyle = {
+    fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+    color: COLORS.text700, marginBottom: 4, display: "block",
+  };
+
+  return (
+    <div style={{
+      marginTop: 32, borderRadius: 16, overflow: "hidden",
+      border: `1px solid ${COLORS.border}`, background: "#fff",
+    }}>
+      {/* Header */}
+      <div style={{
+        padding: "18px 24px", borderBottom: `1px solid ${COLORS.border}`,
+      }}>
+        <h3 style={{
+          fontFamily: "'Libre Baskerville', Georgia, serif",
+          fontSize: 17, fontWeight: 700, color: COLORS.green900, margin: 0,
+        }}>Compare with Your Spouse's Coverage</h3>
+        <p style={{
+          fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+          color: COLORS.text500, margin: "6px 0 0", lineHeight: 1.4,
+        }}>
+          See if staying on Greenhill or switching to your spouse's plan saves more
+        </p>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: "flex", borderBottom: `1px solid ${COLORS.border}` }}>
+        {[
+          { key: "upload", label: "Upload Plan Document" },
+          { key: "manual", label: "Enter Details Manually" },
+        ].map(tab => (
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+            flex: 1, padding: "12px 16px", border: "none",
+            borderBottom: activeTab === tab.key ? `3px solid ${COLORS.green600}` : "3px solid transparent",
+            background: activeTab === tab.key ? COLORS.green50 : "#fff",
+            cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+            fontSize: 13, fontWeight: activeTab === tab.key ? 600 : 400,
+            color: activeTab === tab.key ? COLORS.green700 : COLORS.text500,
+            transition: "all 0.2s",
+          }}>{tab.label}</button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div style={{ padding: 24 }}>
+        {activeTab === "upload" && !spousePlan && (
+          <div>
+            <div style={{
+              border: `2px dashed ${COLORS.border}`, borderRadius: 12,
+              padding: 32, textAlign: "center", background: COLORS.cream,
+              position: "relative",
+            }}>
+              {uploading ? (
+                <div>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 20, margin: "0 auto 12px",
+                    border: `3px solid ${COLORS.green100}`,
+                    borderTopColor: COLORS.green600,
+                    animation: "spin 1s linear infinite",
+                  }} />
+                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: COLORS.text500 }}>
+                    Analyzing plan document...
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontSize: 36, marginBottom: 8 }}>📄</div>
+                  <div style={{
+                    fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+                    fontWeight: 600, color: COLORS.text900, marginBottom: 4,
+                  }}>Upload your spouse's plan summary (PDF)</div>
+                  <div style={{
+                    fontFamily: "'DM Sans', sans-serif", fontSize: 12,
+                    color: COLORS.text500, marginBottom: 16,
+                  }}>We'll extract the key details automatically</div>
+                  <label style={{
+                    display: "inline-block", padding: "10px 24px", borderRadius: 10,
+                    background: COLORS.green700, color: "#fff", cursor: "pointer",
+                    fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600,
+                  }}>
+                    Choose File
+                    <input type="file" accept=".pdf" onChange={handleFileUpload}
+                      style={{ display: "none" }} />
+                  </label>
+                </div>
+              )}
+            </div>
+            {uploadError && (
+              <div style={{
+                marginTop: 12, padding: 12, borderRadius: 8,
+                background: COLORS.redLight,
+                fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: COLORS.red, lineHeight: 1.5,
+              }}>{uploadError}</div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "manual" && !spousePlan && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div>
+              <label style={labelStyle}>Plan name</label>
+              <input type="text" value={manualForm.planName} onChange={e => updateManual("planName", e.target.value)}
+                placeholder="e.g., Aetna PPO" style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>Monthly premium for adding you</label>
+              <input type="number" value={manualForm.monthlyPremium} onChange={e => updateManual("monthlyPremium", e.target.value)}
+                placeholder="0" style={inputStyle} />
+            </div>
+            <div style={{ display: "flex", gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <label style={labelStyle}>Deductible (individual)</label>
+                <input type="number" value={manualForm.deductible} onChange={e => updateManual("deductible", e.target.value)}
+                  placeholder="0" style={inputStyle} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={labelStyle}>Out-of-pocket max (individual)</label>
+                <input type="number" value={manualForm.oopMax} onChange={e => updateManual("oopMax", e.target.value)}
+                  placeholder="0" style={inputStyle} />
+              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>Typical copay for a doctor visit</label>
+              <input type="number" value={manualForm.copay} onChange={e => updateManual("copay", e.target.value)}
+                placeholder="0" style={inputStyle} />
+            </div>
+            <div style={{
+              background: COLORS.green50, borderRadius: 12, padding: "14px 18px",
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+            }}>
+              <div>
+                <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text900 }}>
+                  Does the employer contribute to an HSA?
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <ToggleChip selected={manualForm.hsaContribution} label="Yes" onClick={() => updateManual("hsaContribution", true)} />
+                <ToggleChip selected={!manualForm.hsaContribution} label="No" onClick={() => updateManual("hsaContribution", false)} />
+              </div>
+            </div>
+            {manualForm.hsaContribution && (
+              <div>
+                <label style={labelStyle}>Annual HSA employer contribution</label>
+                <input type="number" value={manualForm.hsaAmount} onChange={e => updateManual("hsaAmount", e.target.value)}
+                  placeholder="0" style={inputStyle} />
+              </div>
+            )}
+            <button onClick={handleManualSubmit} style={{
+              padding: "12px 24px", borderRadius: 10, border: "none",
+              background: COLORS.green700, color: "#fff", cursor: "pointer",
+              fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600,
+              alignSelf: "flex-end",
+            }}>Compare Plans</button>
+          </div>
+        )}
+
+        {/* Comparison results */}
+        {spousePlan && (
+          <div>
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>
+              {/* Greenhill option */}
+              <div style={{
+                flex: 1, minWidth: 220, padding: 20, borderRadius: 14,
+                border: `2px solid ${greenhillEstimatedTotal <= spouseEstimatedTotal ? COLORS.green600 : COLORS.border}`,
+                position: "relative", background: "#fff",
+              }}>
+                {greenhillEstimatedTotal <= spouseEstimatedTotal && (
+                  <div style={{
+                    position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)",
+                    background: COLORS.green700, color: "#fff",
+                    padding: "3px 14px", borderRadius: 20,
+                    fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 700,
+                    whiteSpace: "nowrap",
+                  }}>BETTER VALUE</div>
+                )}
+                <h4 style={{
+                  fontFamily: "'Libre Baskerville', Georgia, serif",
+                  fontSize: 15, fontWeight: 700, color: COLORS.green900, margin: "4px 0 12px",
+                  textAlign: "center",
+                }}>Stay on Greenhill ({winnerPlan.shortName})</h4>
+                <div style={{
+                  textAlign: "center", paddingBottom: 12, marginBottom: 12,
+                  borderBottom: `1px solid ${COLORS.border}`,
+                }}>
+                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: COLORS.text500, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>
+                    Estimated Annual Cost
+                  </div>
+                  <div style={{
+                    fontFamily: "'Libre Baskerville', Georgia, serif",
+                    fontSize: 26, fontWeight: 700,
+                    color: greenhillEstimatedTotal <= spouseEstimatedTotal ? COLORS.green700 : COLORS.text900,
+                  }}>${greenhillEstimatedTotal.toLocaleString()}</div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {[
+                    ["Annual premiums", `$${winnerResult.annualPremium.toLocaleString()}`],
+                    ["Deductible", `$${winnerResult.deductible.toLocaleString()}`],
+                    ["OOP max", `$${winnerResult.oopMax.toLocaleString()}`],
+                    ...(winnerResult.hsaContribution > 0 ? [["HSA contribution", `−$${winnerResult.hsaContribution.toLocaleString()}`]] : []),
+                  ].map(([label, val], i) => (
+                    <div key={i} style={{
+                      display: "flex", justifyContent: "space-between",
+                      fontFamily: "'DM Sans', sans-serif", fontSize: 12,
+                    }}>
+                      <span style={{ color: COLORS.text500 }}>{label}</span>
+                      <span style={{ fontWeight: 600, color: label.includes("HSA") ? COLORS.green600 : COLORS.text900 }}>{val}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Spouse option */}
+              <div style={{
+                flex: 1, minWidth: 220, padding: 20, borderRadius: 14,
+                border: `2px solid ${spouseEstimatedTotal < greenhillEstimatedTotal ? COLORS.green600 : COLORS.border}`,
+                position: "relative", background: "#fff",
+              }}>
+                {spouseEstimatedTotal < greenhillEstimatedTotal && (
+                  <div style={{
+                    position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)",
+                    background: COLORS.green700, color: "#fff",
+                    padding: "3px 14px", borderRadius: 20,
+                    fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 700,
+                    whiteSpace: "nowrap",
+                  }}>BETTER VALUE</div>
+                )}
+                <h4 style={{
+                  fontFamily: "'Libre Baskerville', Georgia, serif",
+                  fontSize: 15, fontWeight: 700, color: COLORS.green900, margin: "4px 0 12px",
+                  textAlign: "center",
+                }}>Switch to {spousePlan.planName}</h4>
+                <div style={{
+                  textAlign: "center", paddingBottom: 12, marginBottom: 12,
+                  borderBottom: `1px solid ${COLORS.border}`,
+                }}>
+                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: COLORS.text500, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>
+                    Estimated Annual Cost
+                  </div>
+                  <div style={{
+                    fontFamily: "'Libre Baskerville', Georgia, serif",
+                    fontSize: 26, fontWeight: 700,
+                    color: spouseEstimatedTotal < greenhillEstimatedTotal ? COLORS.green700 : COLORS.text900,
+                  }}>${Math.round(spouseEstimatedTotal).toLocaleString()}</div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {[
+                    ["Annual premiums", `$${spousePlan.annualPremium.toLocaleString()}`],
+                    ["Deductible", `$${spousePlan.deductible.toLocaleString()}`],
+                    ["OOP max", `$${spousePlan.oopMax.toLocaleString()}`],
+                    ...(spousePlan.hsaContribution > 0 ? [["HSA contribution", `−$${spousePlan.hsaContribution.toLocaleString()}`]] : []),
+                  ].map(([label, val], i) => (
+                    <div key={i} style={{
+                      display: "flex", justifyContent: "space-between",
+                      fontFamily: "'DM Sans', sans-serif", fontSize: 12,
+                    }}>
+                      <span style={{ color: COLORS.text500 }}>{label}</span>
+                      <span style={{ fontWeight: 600, color: label.includes("HSA") ? COLORS.green600 : COLORS.text900 }}>{val}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Note about trade-offs */}
+            <div style={{
+              padding: 14, borderRadius: 10, background: COLORS.blueLight,
+              fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: COLORS.blue, lineHeight: 1.6,
+            }}>
+              <strong>Keep in mind:</strong> If you switch to your spouse's plan, your Greenhill premium drops to $0
+              but you lose the Greenhill HSA contribution
+              {winnerResult.hsaContribution > 0 ? ` ($${winnerResult.hsaContribution.toLocaleString()}/year)` : ""}.
+              The medical cost estimate above uses the same usage profile you entered.
+              Actual costs on the spouse's plan will depend on their specific copays, coinsurance rates, and network.
+            </div>
+
+            <div style={{ textAlign: "center", marginTop: 16 }}>
+              <button onClick={() => setSpousePlan(null)} style={{
+                padding: "8px 20px", borderRadius: 8, border: `1px solid ${COLORS.border}`,
+                background: "#fff", cursor: "pointer",
+                fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: COLORS.text500,
+              }}>Re-enter spouse plan details</button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
@@ -621,7 +1035,7 @@ function ResultsView({ profile, onRestart }) {
   const results = { copay: copayResult, cdhp: cdhpResult };
   const winner = copayResult.totalOutOfPocket < cdhpResult.totalOutOfPocket ? "copay" : "cdhp";
   const savings = Math.abs(copayResult.totalOutOfPocket - cdhpResult.totalOutOfPocket);
-  
+
   const tierLabel = { employee: "Employee Only", empChildren: "Employee + Child(ren)", empSpouse: "Employee + Spouse", family: "Employee + Family" }[profile.coverageTier];
 
   const PlanCard = ({ planKey, result, isWinner }) => {
@@ -647,7 +1061,7 @@ function ResultsView({ profile, onRestart }) {
           fontSize: 18, fontWeight: 700, color: COLORS.green900,
           margin: "8px 0 16px", textAlign: "center",
         }}>{plan.shortName} Plan</h3>
-        
+
         <div style={{
           textAlign: "center", padding: "16px 0", marginBottom: 16,
           borderBottom: `1px solid ${COLORS.border}`,
@@ -694,7 +1108,7 @@ function ResultsView({ profile, onRestart }) {
     prosConsCdhp.push({ type: "pro", text: `Save $${(copayResult.annualPremium - cdhpResult.annualPremium).toLocaleString()}/year in premiums` });
     prosConsCopay.push({ type: "con", text: `Higher premiums: $${copayResult.annualPremium.toLocaleString()}/year` });
   }
-  
+
   prosConsCopay.push({ type: "pro", text: "Predictable copays — you know what each visit costs upfront" });
   prosConsCopay.push({ type: "pro", text: "Many services bypass the deductible entirely" });
   prosConsCopay.push({ type: "pro", text: "Prescriptions covered immediately (no deductible)" });
@@ -780,12 +1194,12 @@ function ResultsView({ profile, onRestart }) {
         fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: COLORS.text700,
         lineHeight: 1.6, marginBottom: 24,
       }}>
-        <strong>Important:</strong> These are estimates based on average healthcare costs and the information you provided. 
-        Actual costs will vary depending on providers, specific treatments, and negotiated rates. 
+        <strong>Important:</strong> These are estimates based on average healthcare costs and the information you provided.
+        Actual costs will vary depending on providers, specific treatments, and negotiated rates.
         For personalized guidance, contact Quantum Health at 1-877-225-2981 or speak with HR.
       </div>
 
-      <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 40 }}>
+      <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 0 }}>
         <button onClick={onRestart} style={{
           padding: "12px 28px", borderRadius: 10, border: `1px solid ${COLORS.border}`,
           background: "#fff", cursor: "pointer",
@@ -793,7 +1207,15 @@ function ResultsView({ profile, onRestart }) {
         }}>Start Over</button>
       </div>
 
-      <AIChat profile={profile} results={results} />
+      {/* Spouse Plan Comparison — only shown when spouse coverage is indicated */}
+      {profile.hasSpouseCoverage && (
+        <SpousePlanComparison profile={profile} results={results} />
+      )}
+
+      {/* Inline Customized Analysis Chat */}
+      <CustomizedAnalysisChat profile={profile} results={results} />
+
+      <div style={{ height: 60 }} />
     </div>
   );
 }
@@ -862,12 +1284,12 @@ export default function App() {
         * { box-sizing: border-box; }
         input::placeholder { color: ${COLORS.text300}; }
       `}</style>
-      
+
       {/* Header */}
       <div style={{ padding: "20px 24px 16px", maxWidth: 600, margin: "0 auto", width: "100%" }}>
         <GreenhillLogo size={30} />
       </div>
-      
+
       {step > 0 && (
         <div style={{ maxWidth: 560, margin: "0 auto 20px", width: "100%", padding: "0 20px" }}>
           <ProgressBar step={step} totalSteps={TOTAL_STEPS} />
@@ -1015,7 +1437,7 @@ export default function App() {
               background: COLORS.blueLight,
               fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: COLORS.blue, lineHeight: 1.5,
             }}>
-              💡 <strong>Tip:</strong> The Co-Pay plan charges $20/visit for therapy with no deductible. 
+              💡 <strong>Tip:</strong> The Co-Pay plan charges $20/visit for therapy with no deductible.
               The CDHP covers therapy at no charge, but only after you've met the $3,300 deductible.
             </div>
           </StepContainer>
@@ -1047,7 +1469,7 @@ export default function App() {
               background: COLORS.blueLight,
               fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: COLORS.blue, lineHeight: 1.5,
             }}>
-              💡 <strong>Not sure about tiers?</strong> Most common medications (metformin, lisinopril, etc.) are generic. 
+              💡 <strong>Not sure about tiers?</strong> Most common medications (metformin, lisinopril, etc.) are generic.
               If you're unsure, check <a href="https://www.caremark.com" target="_blank" style={{ color: COLORS.blue }}>caremark.com</a> or ask the chat advisor after you see your results.
             </div>
           </StepContainer>
@@ -1081,7 +1503,7 @@ export default function App() {
                   <ToggleChip selected={!profile.expectingBaby} label="No" onClick={() => update("expectingBaby", false)} />
                 </div>
               </div>
-              
+
               <div style={{
                 background: "#fff", borderRadius: 12, padding: "16px 20px",
                 border: `1px solid ${COLORS.border}`,
