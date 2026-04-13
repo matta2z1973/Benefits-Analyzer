@@ -332,10 +332,24 @@ function CounterInput({ value, onChange, min = 0, max = 50, label }) {
           background: "#fff", cursor: "pointer", fontSize: 18, color: COLORS.text500,
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>−</button>
-        <span style={{
-          fontFamily: "'DM Sans', sans-serif", fontSize: 16, fontWeight: 600,
-          color: COLORS.text900, width: 32, textAlign: "center",
-        }}>{value}</span>
+        <input
+          type="number"
+          value={value}
+          min={min}
+          max={max}
+          onChange={e => {
+            const v = e.target.value === "" ? "" : parseInt(e.target.value, 10);
+            if (v === "") onChange(min);
+            else if (!isNaN(v)) onChange(Math.max(min, Math.min(max, v)));
+          }}
+          onFocus={e => e.target.select()}
+          style={{
+            fontFamily: "'DM Sans', sans-serif", fontSize: 16, fontWeight: 600,
+            color: COLORS.text900, width: 44, textAlign: "center",
+            border: `1px solid ${COLORS.border}`, borderRadius: 6,
+            padding: "2px 0", outline: "none", MozAppearance: "textfield",
+          }}
+        />
         <button onClick={() => onChange(Math.min(max, value + 1))} style={{
           width: 32, height: 32, borderRadius: 8, border: `1px solid ${COLORS.border}`,
           background: "#fff", cursor: "pointer", fontSize: 18, color: COLORS.text500,
