@@ -1,0 +1,91 @@
+{
+  "_meta": {
+    "planYear": "2025",
+    "effectiveDate": "01/01/2025",
+    "lastUpdated": "2025-01-01",
+    "source": "Greenhill School Summary of Benefits / ISAS Group Benefits Trust"
+  },
+
+  "premiumsBiweekly": {
+    "copay": { "employee": 71.99, "empChildren": 212.83, "empSpouse": 529.62, "family": 719.20 },
+    "cdhp":  { "employee": 0,     "empChildren": 119.68, "empSpouse": 397.54, "family": 476.32 }
+  },
+
+  "hsaEmployer": { "employee": 1150, "withDependents": 2300 },
+
+  "plans": {
+    "copay": {
+      "name": "Co-Pay Plan (PPO)",
+      "shortName": "Co-Pay",
+      "deductible": { "individual": 1250, "family": 3125 },
+      "oopMax": { "individual": 6750, "family": 13500 },
+      "primaryCare": { "type": "copay", "amount": 20, "deductibleApplies": false },
+      "specialist": { "type": "copay", "amount": 40, "deductibleApplies": false },
+      "preventive": { "type": "free" },
+      "labXray": { "type": "copay", "amount": 20, "deductibleApplies": false },
+      "imaging": { "type": "coinsurance", "rate": 0.15 },
+      "erVisit": { "type": "copay", "amount": 200, "deductibleApplies": false },
+      "urgentCare": { "type": "copay", "amount": 75, "deductibleApplies": false },
+      "hospitalFacility": { "type": "coinsurance", "rate": 0.15 },
+      "surgeonFees": { "type": "coinsurance", "rate": 0.15 },
+      "outpatientSurgeryFacility": { "type": "coinsurance", "rate": 0.15 },
+      "mentalHealthOutpatient": { "type": "copay", "amount": 20, "deductibleApplies": false },
+      "mentalHealthInpatient": { "type": "coinsurance", "rate": 0.15 },
+      "maternityDelivery": { "type": "coinsurance", "rate": 0.15 },
+      "rx": {
+        "deductibleApplies": false,
+        "generic": { "shortTerm": 10, "maintenance": 15, "mailOrder": 25 },
+        "preferredBrand": { "shortTerm": 30, "maintenance": 40, "mailOrder": 75 },
+        "nonPreferredBrand": { "shortTerm": 60, "maintenance": 80, "mailOrder": 150 },
+        "specialty": { "genericPref": 0.10, "nonPref": 0.15 }
+      },
+      "physicalTherapy": { "type": "copay", "amount": 40, "deductibleApplies": false }
+    },
+    "cdhp": {
+      "name": "CDHP (with HSA)",
+      "shortName": "CDHP",
+      "deductible": { "individual": 3300, "family": 7500 },
+      "oopMax": { "individual": 4100, "family": 10250 },
+      "primaryCare": { "type": "free_after_deductible" },
+      "specialist": { "type": "coinsurance", "rate": 0.05 },
+      "preventive": { "type": "free" },
+      "labXray": { "type": "free_after_deductible" },
+      "imaging": { "type": "coinsurance", "rate": 0.05 },
+      "erVisit": { "type": "coinsurance", "rate": 0.05 },
+      "urgentCare": { "type": "coinsurance", "rate": 0.05 },
+      "hospitalFacility": { "type": "coinsurance", "rate": 0.05 },
+      "surgeonFees": { "type": "coinsurance", "rate": 0.05 },
+      "outpatientSurgeryFacility": { "type": "coinsurance", "rate": 0.05 },
+      "mentalHealthOutpatient": { "type": "free_after_deductible" },
+      "mentalHealthInpatient": { "type": "coinsurance", "rate": 0.05 },
+      "maternityDelivery": { "type": "coinsurance", "rate": 0.05 },
+      "rx": {
+        "deductibleApplies": true,
+        "generic": { "shortTerm": 5, "maintenance": 10, "mailOrder": 10 },
+        "preferredBrand": { "shortTerm": 20, "maintenance": 30, "mailOrder": 50 },
+        "nonPreferredBrand": { "shortTerm": 40, "maintenance": 60, "mailOrder": 100 },
+        "specialty": { "genericPref": 0.05, "nonPref": 0.10 }
+      },
+      "physicalTherapy": { "type": "coinsurance", "rate": 0.05 }
+    }
+  },
+
+  "avgCosts": {
+    "primaryCare": 275,
+    "specialist": 400,
+    "erVisit": 2800,
+    "urgentCare": 350,
+    "labXray": 150,
+    "imaging": 1200,
+    "hospitalDayFacility": 3500,
+    "surgeonFees": 4000,
+    "outpatientSurgery": 8000,
+    "mentalHealthVisit": 200,
+    "maternityTotal": 12000,
+    "physicalTherapyVisit": 200,
+    "genericRxMonth": 30,
+    "preferredBrandRxMonth": 250,
+    "nonPreferredBrandRxMonth": 500,
+    "specialtyRxMonth": 3000
+  }
+}
