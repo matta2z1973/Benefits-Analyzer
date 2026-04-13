@@ -170,6 +170,48 @@ function estimateAnnualCost(profile, planKey) {
     addCharge(AVG_COSTS.surgeonFees, plan.surgeonFees, 1);
   }
 
+  // Serious health conditions
+  if (profile.seriousConditions && profile.seriousConditions.length > 0) {
+    profile.seriousConditions.forEach(condition => {
+      const isActive = profile.conditionStatus?.[condition] === "active";
+      if (condition === "cancer") {
+        if (isActive) {
+          addCharge(AVG_COSTS.specialist, plan.specialist, 24);
+          addCharge(AVG_COSTS.imaging, plan.imaging, 6);
+          addCharge(3000, plan.hospitalFacility, 4);
+        } else {
+          addCharge(AVG_COSTS.specialist, plan.specialist, 4);
+          addCharge(AVG_COSTS.imaging, plan.imaging, 2);
+        }
+      } else if (condition === "addiction") {
+        if (isActive) {
+          addCharge(AVG_COSTS.mentalHealthVisit, plan.mentalHealthOutpatient, 48);
+          addCharge(AVG_COSTS.specialist, plan.specialist, 12);
+        } else {
+          addCharge(AVG_COSTS.mentalHealthVisit, plan.mentalHealthOutpatient, 24);
+          addCharge(AVG_COSTS.specialist, plan.specialist, 4);
+        }
+      } else if (condition === "mentalHealthSerious") {
+        if (isActive) {
+          addCharge(AVG_COSTS.mentalHealthVisit, plan.mentalHealthOutpatient, 36);
+          addCharge(AVG_COSTS.specialist, plan.specialist, 12);
+        } else {
+          addCharge(AVG_COSTS.mentalHealthVisit, plan.mentalHealthOutpatient, 24);
+          addCharge(AVG_COSTS.specialist, plan.specialist, 4);
+        }
+      } else if (condition === "chronicSerious") {
+        if (isActive) {
+          addCharge(AVG_COSTS.specialist, plan.specialist, 12);
+          addCharge(AVG_COSTS.labXray, plan.labXray, 12);
+          addCharge(AVG_COSTS.imaging, plan.imaging, 4);
+        } else {
+          addCharge(AVG_COSTS.specialist, plan.specialist, 4);
+          addCharge(AVG_COSTS.labXray, plan.labXray, 4);
+        }
+      }
+    });
+  }
+
   // Prescriptions
   const rxDeductibleApplies = plan.rx.deductibleApplies;
   const addRx = (monthlyAllowed, copayAmount, months) => {
@@ -322,40 +364,48 @@ function OptionCard({ selected, onClick, title, subtitle, icon, recommended }) {
   );
 }
 
-function CounterInput({ value, onChange, min = 0, max = 50, label }) {
+function CounterInput({ value, onChange, min = 0, max = 999, label, warnAbove = 20 }) {
+  const showWarning = value > warnAbove;
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0" }}>
-      <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: COLORS.text700 }}>{label}</span>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <button onClick={() => onChange(Math.max(min, value - 1))} style={{
-          width: 32, height: 32, borderRadius: 8, border: `1px solid ${COLORS.border}`,
-          background: "#fff", cursor: "pointer", fontSize: 18, color: COLORS.text500,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>−</button>
-        <input
-          type="number"
-          value={value}
-          min={min}
-          max={max}
-          onChange={e => {
-            const v = e.target.value === "" ? "" : parseInt(e.target.value, 10);
-            if (v === "") onChange(min);
-            else if (!isNaN(v)) onChange(Math.max(min, Math.min(max, v)));
-          }}
-          onFocus={e => e.target.select()}
-          style={{
-            fontFamily: "'DM Sans', sans-serif", fontSize: 16, fontWeight: 600,
-            color: COLORS.text900, width: 44, textAlign: "center",
-            border: `1px solid ${COLORS.border}`, borderRadius: 6,
-            padding: "2px 0", outline: "none", MozAppearance: "textfield",
-          }}
-        />
-        <button onClick={() => onChange(Math.min(max, value + 1))} style={{
-          width: 32, height: 32, borderRadius: 8, border: `1px solid ${COLORS.border}`,
-          background: "#fff", cursor: "pointer", fontSize: 18, color: COLORS.text500,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>+</button>
+    <div style={{ padding: "10px 0" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: COLORS.text700 }}>{label}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button onClick={() => onChange(Math.max(min, value - 1))} style={{
+            width: 32, height: 32, borderRadius: 8, border: `1px solid ${COLORS.border}`,
+            background: "#fff", cursor: "pointer", fontSize: 18, color: COLORS.text500,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>−</button>
+          <input
+            type="number"
+            value={value}
+            min={min}
+            onChange={e => {
+              const v = e.target.value === "" ? "" : parseInt(e.target.value, 10);
+              if (v === "") onChange(min);
+              else if (!isNaN(v)) onChange(Math.max(min, v));
+            }}
+            onFocus={e => e.target.select()}
+            style={{
+              fontFamily: "'DM Sans', sans-serif", fontSize: 16, fontWeight: 600,
+              color: showWarning ? COLORS.gold : COLORS.text900, width: 44, textAlign: "center",
+              border: `1px solid ${showWarning ? COLORS.gold : COLORS.border}`, borderRadius: 6,
+              padding: "2px 0", outline: "none", MozAppearance: "textfield",
+            }}
+          />
+          <button onClick={() => onChange(value + 1)} style={{
+            width: 32, height: 32, borderRadius: 8, border: `1px solid ${COLORS.border}`,
+            background: "#fff", cursor: "pointer", fontSize: 18, color: COLORS.text500,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>+</button>
+        </div>
       </div>
+      {showWarning && (
+        <div style={{
+          fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: COLORS.gold,
+          textAlign: "right", marginTop: 4,
+        }}>That seems high — double-check this is the annual total for all covered members.</div>
+      )}
     </div>
   );
 }
@@ -671,404 +721,49 @@ Always note this is still an estimate and they should contact HR or Quantum Heal
   );
 }
 
-// ─── SPOUSE PLAN COMPARISON ──────────────────────────────────
-function SpousePlanComparison({ profile, results }) {
-  const [activeTab, setActiveTab] = useState("upload"); // "upload" or "manual"
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState("");
-  const [spousePlan, setSpousePlan] = useState(null);
-  const [manualForm, setManualForm] = useState({
-    planName: "",
-    monthlyPremium: "",
-    deductible: "",
-    oopMax: "",
-    copay: "",
-    hsaContribution: false,
-    hsaAmount: "",
-  });
-
-  const winner = results.copay.totalOutOfPocket < results.cdhp.totalOutOfPocket ? "copay" : "cdhp";
-  const winnerResult = results[winner];
-  const winnerPlan = PLANS[winner];
-
-  const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    setUploadError("");
-    setSpousePlan(null);
-
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const response = await fetch("/api/parse-plan", {
-        method: "POST",
-        body: formData,
-      });
-      if (!response.ok) throw new Error("Failed to parse plan document");
-      const data = await response.json();
-      setSpousePlan({
-        planName: data.planName || "Spouse's Plan",
-        annualPremium: data.monthlyPremium ? data.monthlyPremium * 12 : 0,
-        deductible: data.deductible || 0,
-        oopMax: data.oopMax || 0,
-        copay: data.copay || 0,
-        hsaContribution: data.hsaContribution || 0,
-      });
-    } catch (err) {
-      setUploadError("Could not parse the plan document. Please try entering details manually.");
-    }
-    setUploading(false);
-  };
-
-  const handleManualSubmit = () => {
-    setSpousePlan({
-      planName: manualForm.planName || "Spouse's Plan",
-      annualPremium: (parseFloat(manualForm.monthlyPremium) || 0) * 12,
-      deductible: parseFloat(manualForm.deductible) || 0,
-      oopMax: parseFloat(manualForm.oopMax) || 0,
-      copay: parseFloat(manualForm.copay) || 0,
-      hsaContribution: manualForm.hsaContribution ? (parseFloat(manualForm.hsaAmount) || 0) : 0,
-    });
-  };
-
-  const updateManual = (key, val) => setManualForm(f => ({ ...f, [key]: val }));
-
-  // Estimate costs if switching to spouse's plan:
-  // Greenhill premium drops to $0, lose Greenhill HSA contribution
-  // Use spouse plan's premium + estimated medical costs (rough approximation)
-  const spouseEstimatedTotal = spousePlan
-    ? spousePlan.annualPremium + winnerResult.estimatedMedicalCosts - spousePlan.hsaContribution
-    : null;
-
-  const greenhillEstimatedTotal = winnerResult.totalOutOfPocket;
-
-  const inputStyle = {
-    width: "100%", padding: "10px 14px", borderRadius: 10,
-    border: `1px solid ${COLORS.border}`, outline: "none",
-    fontFamily: "'DM Sans', sans-serif", fontSize: 13,
-    color: COLORS.text900,
-  };
-
-  const labelStyle = {
-    fontFamily: "'DM Sans', sans-serif", fontSize: 13,
-    color: COLORS.text700, marginBottom: 4, display: "block",
-  };
-
-  return (
-    <div style={{
-      marginTop: 32, borderRadius: 16, overflow: "hidden",
-      border: `1px solid ${COLORS.border}`, background: "#fff",
-    }}>
-      {/* Header */}
-      <div style={{
-        padding: "18px 24px", borderBottom: `1px solid ${COLORS.border}`,
-      }}>
-        <h3 style={{
-          fontFamily: "'Libre Baskerville', Georgia, serif",
-          fontSize: 17, fontWeight: 700, color: COLORS.green900, margin: 0,
-        }}>Compare with Your Spouse's Coverage</h3>
-        <p style={{
-          fontFamily: "'DM Sans', sans-serif", fontSize: 13,
-          color: COLORS.text500, margin: "6px 0 0", lineHeight: 1.4,
-        }}>
-          See if staying on Greenhill or switching to your spouse's plan saves more
-        </p>
-      </div>
-
-      {/* Tabs */}
-      <div style={{ display: "flex", borderBottom: `1px solid ${COLORS.border}` }}>
-        {[
-          { key: "upload", label: "Upload Plan Document" },
-          { key: "manual", label: "Enter Details Manually" },
-        ].map(tab => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
-            flex: 1, padding: "12px 16px", border: "none",
-            borderBottom: activeTab === tab.key ? `3px solid ${COLORS.green600}` : "3px solid transparent",
-            background: activeTab === tab.key ? COLORS.green50 : "#fff",
-            cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
-            fontSize: 13, fontWeight: activeTab === tab.key ? 600 : 400,
-            color: activeTab === tab.key ? COLORS.green700 : COLORS.text500,
-            transition: "all 0.2s",
-          }}>{tab.label}</button>
-        ))}
-      </div>
-
-      {/* Content */}
-      <div style={{ padding: 24 }}>
-        {activeTab === "upload" && !spousePlan && (
-          <div>
-            <div style={{
-              border: `2px dashed ${COLORS.border}`, borderRadius: 12,
-              padding: 32, textAlign: "center", background: COLORS.cream,
-              position: "relative",
-            }}>
-              {uploading ? (
-                <div>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 20, margin: "0 auto 12px",
-                    border: `3px solid ${COLORS.green100}`,
-                    borderTopColor: COLORS.green600,
-                    animation: "spin 1s linear infinite",
-                  }} />
-                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: COLORS.text500 }}>
-                    Analyzing plan document...
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <div style={{ fontSize: 36, marginBottom: 8 }}>📄</div>
-                  <div style={{
-                    fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-                    fontWeight: 600, color: COLORS.text900, marginBottom: 4,
-                  }}>Upload your spouse's plan summary (PDF)</div>
-                  <div style={{
-                    fontFamily: "'DM Sans', sans-serif", fontSize: 12,
-                    color: COLORS.text500, marginBottom: 16,
-                  }}>We'll extract the key details automatically</div>
-                  <label style={{
-                    display: "inline-block", padding: "10px 24px", borderRadius: 10,
-                    background: COLORS.green700, color: "#fff", cursor: "pointer",
-                    fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600,
-                  }}>
-                    Choose File
-                    <input type="file" accept=".pdf" onChange={handleFileUpload}
-                      style={{ display: "none" }} />
-                  </label>
-                </div>
-              )}
-            </div>
-            {uploadError && (
-              <div style={{
-                marginTop: 12, padding: 12, borderRadius: 8,
-                background: COLORS.redLight,
-                fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: COLORS.red, lineHeight: 1.5,
-              }}>{uploadError}</div>
-            )}
-          </div>
-        )}
-
-        {activeTab === "manual" && !spousePlan && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div>
-              <label style={labelStyle}>Plan name</label>
-              <input type="text" value={manualForm.planName} onChange={e => updateManual("planName", e.target.value)}
-                placeholder="e.g., Aetna PPO" style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>Monthly premium for adding you</label>
-              <input type="number" value={manualForm.monthlyPremium} onChange={e => updateManual("monthlyPremium", e.target.value)}
-                placeholder="0" style={inputStyle} />
-            </div>
-            <div style={{ display: "flex", gap: 12 }}>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>Deductible (individual)</label>
-                <input type="number" value={manualForm.deductible} onChange={e => updateManual("deductible", e.target.value)}
-                  placeholder="0" style={inputStyle} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>Out-of-pocket max (individual)</label>
-                <input type="number" value={manualForm.oopMax} onChange={e => updateManual("oopMax", e.target.value)}
-                  placeholder="0" style={inputStyle} />
-              </div>
-            </div>
-            <div>
-              <label style={labelStyle}>Typical copay for a doctor visit</label>
-              <input type="number" value={manualForm.copay} onChange={e => updateManual("copay", e.target.value)}
-                placeholder="0" style={inputStyle} />
-            </div>
-            <div style={{
-              background: COLORS.green50, borderRadius: 12, padding: "14px 18px",
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-            }}>
-              <div>
-                <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.text900 }}>
-                  Does the employer contribute to an HSA?
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <ToggleChip selected={manualForm.hsaContribution} label="Yes" onClick={() => updateManual("hsaContribution", true)} />
-                <ToggleChip selected={!manualForm.hsaContribution} label="No" onClick={() => updateManual("hsaContribution", false)} />
-              </div>
-            </div>
-            {manualForm.hsaContribution && (
-              <div>
-                <label style={labelStyle}>Annual HSA employer contribution</label>
-                <input type="number" value={manualForm.hsaAmount} onChange={e => updateManual("hsaAmount", e.target.value)}
-                  placeholder="0" style={inputStyle} />
-              </div>
-            )}
-            <button onClick={handleManualSubmit} style={{
-              padding: "12px 24px", borderRadius: 10, border: "none",
-              background: COLORS.green700, color: "#fff", cursor: "pointer",
-              fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600,
-              alignSelf: "flex-end",
-            }}>Compare Plans</button>
-          </div>
-        )}
-
-        {/* Comparison results */}
-        {spousePlan && (
-          <div>
-            <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>
-              {/* Greenhill option */}
-              <div style={{
-                flex: 1, minWidth: 220, padding: 20, borderRadius: 14,
-                border: `2px solid ${greenhillEstimatedTotal <= spouseEstimatedTotal ? COLORS.green600 : COLORS.border}`,
-                position: "relative", background: "#fff",
-              }}>
-                {greenhillEstimatedTotal <= spouseEstimatedTotal && (
-                  <div style={{
-                    position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)",
-                    background: COLORS.green700, color: "#fff",
-                    padding: "3px 14px", borderRadius: 20,
-                    fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 700,
-                    whiteSpace: "nowrap",
-                  }}>BETTER VALUE</div>
-                )}
-                <h4 style={{
-                  fontFamily: "'Libre Baskerville', Georgia, serif",
-                  fontSize: 15, fontWeight: 700, color: COLORS.green900, margin: "4px 0 12px",
-                  textAlign: "center",
-                }}>Stay on Greenhill ({winnerPlan.shortName})</h4>
-                <div style={{
-                  textAlign: "center", paddingBottom: 12, marginBottom: 12,
-                  borderBottom: `1px solid ${COLORS.border}`,
-                }}>
-                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: COLORS.text500, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>
-                    Estimated Annual Cost
-                  </div>
-                  <div style={{
-                    fontFamily: "'Libre Baskerville', Georgia, serif",
-                    fontSize: 26, fontWeight: 700,
-                    color: greenhillEstimatedTotal <= spouseEstimatedTotal ? COLORS.green700 : COLORS.text900,
-                  }}>${greenhillEstimatedTotal.toLocaleString()}</div>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {[
-                    ["Annual premiums", `$${winnerResult.annualPremium.toLocaleString()}`],
-                    ["Deductible", `$${winnerResult.deductible.toLocaleString()}`],
-                    ["OOP max", `$${winnerResult.oopMax.toLocaleString()}`],
-                    ...(winnerResult.hsaContribution > 0 ? [["HSA contribution", `−$${winnerResult.hsaContribution.toLocaleString()}`]] : []),
-                  ].map(([label, val], i) => (
-                    <div key={i} style={{
-                      display: "flex", justifyContent: "space-between",
-                      fontFamily: "'DM Sans', sans-serif", fontSize: 12,
-                    }}>
-                      <span style={{ color: COLORS.text500 }}>{label}</span>
-                      <span style={{ fontWeight: 600, color: label.includes("HSA") ? COLORS.green600 : COLORS.text900 }}>{val}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Spouse option */}
-              <div style={{
-                flex: 1, minWidth: 220, padding: 20, borderRadius: 14,
-                border: `2px solid ${spouseEstimatedTotal < greenhillEstimatedTotal ? COLORS.green600 : COLORS.border}`,
-                position: "relative", background: "#fff",
-              }}>
-                {spouseEstimatedTotal < greenhillEstimatedTotal && (
-                  <div style={{
-                    position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)",
-                    background: COLORS.green700, color: "#fff",
-                    padding: "3px 14px", borderRadius: 20,
-                    fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 700,
-                    whiteSpace: "nowrap",
-                  }}>BETTER VALUE</div>
-                )}
-                <h4 style={{
-                  fontFamily: "'Libre Baskerville', Georgia, serif",
-                  fontSize: 15, fontWeight: 700, color: COLORS.green900, margin: "4px 0 12px",
-                  textAlign: "center",
-                }}>Switch to {spousePlan.planName}</h4>
-                <div style={{
-                  textAlign: "center", paddingBottom: 12, marginBottom: 12,
-                  borderBottom: `1px solid ${COLORS.border}`,
-                }}>
-                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: COLORS.text500, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>
-                    Estimated Annual Cost
-                  </div>
-                  <div style={{
-                    fontFamily: "'Libre Baskerville', Georgia, serif",
-                    fontSize: 26, fontWeight: 700,
-                    color: spouseEstimatedTotal < greenhillEstimatedTotal ? COLORS.green700 : COLORS.text900,
-                  }}>${Math.round(spouseEstimatedTotal).toLocaleString()}</div>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {[
-                    ["Annual premiums", `$${spousePlan.annualPremium.toLocaleString()}`],
-                    ["Deductible", `$${spousePlan.deductible.toLocaleString()}`],
-                    ["OOP max", `$${spousePlan.oopMax.toLocaleString()}`],
-                    ...(spousePlan.hsaContribution > 0 ? [["HSA contribution", `−$${spousePlan.hsaContribution.toLocaleString()}`]] : []),
-                  ].map(([label, val], i) => (
-                    <div key={i} style={{
-                      display: "flex", justifyContent: "space-between",
-                      fontFamily: "'DM Sans', sans-serif", fontSize: 12,
-                    }}>
-                      <span style={{ color: COLORS.text500 }}>{label}</span>
-                      <span style={{ fontWeight: 600, color: label.includes("HSA") ? COLORS.green600 : COLORS.text900 }}>{val}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Note about trade-offs */}
-            <div style={{
-              padding: 14, borderRadius: 10, background: COLORS.blueLight,
-              fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: COLORS.blue, lineHeight: 1.6,
-            }}>
-              <strong>Keep in mind:</strong> If you switch to your spouse's plan, your Greenhill premium drops to $0
-              but you lose the Greenhill HSA contribution
-              {winnerResult.hsaContribution > 0 ? ` ($${winnerResult.hsaContribution.toLocaleString()}/year)` : ""}.
-              The medical cost estimate above uses the same usage profile you entered.
-              Actual costs on the spouse's plan will depend on their specific copays, coinsurance rates, and network.
-            </div>
-
-            <div style={{ textAlign: "center", marginTop: 16 }}>
-              <button onClick={() => setSpousePlan(null)} style={{
-                padding: "8px 20px", borderRadius: 8, border: `1px solid ${COLORS.border}`,
-                background: "#fff", cursor: "pointer",
-                fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: COLORS.text500,
-              }}>Re-enter spouse plan details</button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  );
-}
-
 // ─── RESULTS VIEW ────────────────────────────────────────────
-function ResultsView({ profile, onRestart }) {
+function ResultsView({ profile, spousePlan, onRestart }) {
   const copayResult = estimateAnnualCost(profile, "copay");
   const cdhpResult = estimateAnnualCost(profile, "cdhp");
   const results = { copay: copayResult, cdhp: cdhpResult };
   const winner = copayResult.totalOutOfPocket < cdhpResult.totalOutOfPocket ? "copay" : "cdhp";
+  const winnerResult = results[winner];
   const savings = Math.abs(copayResult.totalOutOfPocket - cdhpResult.totalOutOfPocket);
 
   const tierLabel = { employee: "Employee Only", empChildren: "Employee + Child(ren)", empSpouse: "Employee + Spouse", family: "Employee + Family" }[profile.coverageTier];
 
-  const PlanCard = ({ planKey, result, isWinner }) => {
+  // Spouse estimated total
+  const spouseEstimatedTotal = spousePlan
+    ? spousePlan.annualPremium + winnerResult.estimatedMedicalCosts - spousePlan.hsaContribution
+    : null;
+
+  // Determine cheapest of all options for BETTER VALUE badge
+  const allTotals = [
+    { key: "copay", total: copayResult.totalOutOfPocket },
+    { key: "cdhp", total: cdhpResult.totalOutOfPocket },
+  ];
+  if (spousePlan && spouseEstimatedTotal !== null) {
+    allTotals.push({ key: "spouse", total: Math.round(spouseEstimatedTotal) });
+  }
+  const cheapestKey = allTotals.reduce((a, b) => a.total < b.total ? a : b).key;
+
+  const PlanCard = ({ planKey, result, isWinner, isCheapest }) => {
     const plan = PLANS[planKey];
     return (
       <div style={{
-        flex: 1, minWidth: 250, padding: 24, borderRadius: 16,
-        background: isWinner ? "#fff" : "#fff",
-        border: `2px solid ${isWinner ? COLORS.green600 : COLORS.border}`,
+        flex: 1, minWidth: 200, padding: 24, borderRadius: 16,
+        background: "#fff",
+        border: `2px solid ${isCheapest ? COLORS.green600 : COLORS.border}`,
         position: "relative",
       }}>
-        {isWinner && (
+        {isCheapest && (
           <div style={{
             position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)",
             background: COLORS.green700, color: "#fff",
             padding: "4px 16px", borderRadius: 20,
             fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 700,
             letterSpacing: 0.5, whiteSpace: "nowrap",
-          }}>✓ RECOMMENDED FOR YOU</div>
+          }}>BETTER VALUE</div>
         )}
         <h3 style={{
           fontFamily: "'Libre Baskerville', Georgia, serif",
@@ -1087,7 +782,7 @@ function ResultsView({ profile, onRestart }) {
           <div style={{
             fontFamily: "'Libre Baskerville', Georgia, serif",
             fontSize: 32, fontWeight: 700,
-            color: isWinner ? COLORS.green700 : COLORS.text900,
+            color: isCheapest ? COLORS.green700 : COLORS.text900,
           }}>${result.totalOutOfPocket.toLocaleString()}</div>
         </div>
 
@@ -1098,6 +793,70 @@ function ResultsView({ profile, onRestart }) {
             ...(result.hsaContribution > 0 ? [["Greenhill HSA contribution", `−$${result.hsaContribution.toLocaleString()}`]] : []),
             ["Deductible", `$${result.deductible.toLocaleString()}`],
             ["Out-of-pocket max", `$${result.oopMax.toLocaleString()}`],
+          ].map(([label, val], i) => (
+            <div key={i} style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+            }}>
+              <span style={{ color: COLORS.text500 }}>{label}</span>
+              <span style={{
+                fontWeight: 600, color: label.includes("HSA") ? COLORS.green600 : COLORS.text900,
+              }}>{val}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const SpouseCard = () => {
+    if (!spousePlan || spouseEstimatedTotal === null) return null;
+    const isCheapest = cheapestKey === "spouse";
+    const roundedTotal = Math.round(spouseEstimatedTotal);
+    return (
+      <div style={{
+        flex: 1, minWidth: 200, padding: 24, borderRadius: 16,
+        background: "#fff",
+        border: `2px solid ${isCheapest ? COLORS.green600 : COLORS.border}`,
+        position: "relative",
+      }}>
+        {isCheapest && (
+          <div style={{
+            position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)",
+            background: COLORS.green700, color: "#fff",
+            padding: "4px 16px", borderRadius: 20,
+            fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 700,
+            letterSpacing: 0.5, whiteSpace: "nowrap",
+          }}>BETTER VALUE</div>
+        )}
+        <h3 style={{
+          fontFamily: "'Libre Baskerville', Georgia, serif",
+          fontSize: 18, fontWeight: 700, color: COLORS.green900,
+          margin: "8px 0 16px", textAlign: "center",
+        }}>{spousePlan.planName}</h3>
+
+        <div style={{
+          textAlign: "center", padding: "16px 0", marginBottom: 16,
+          borderBottom: `1px solid ${COLORS.border}`,
+        }}>
+          <div style={{
+            fontFamily: "'DM Sans', sans-serif", fontSize: 11,
+            color: COLORS.text500, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4,
+          }}>Estimated Annual Cost</div>
+          <div style={{
+            fontFamily: "'Libre Baskerville', Georgia, serif",
+            fontSize: 32, fontWeight: 700,
+            color: isCheapest ? COLORS.green700 : COLORS.text900,
+          }}>${roundedTotal.toLocaleString()}</div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {[
+            ["Premiums (annual)", `$${spousePlan.annualPremium.toLocaleString()}`],
+            ["Est. medical costs", `$${winnerResult.estimatedMedicalCosts.toLocaleString()}`],
+            ...(spousePlan.hsaContribution > 0 ? [["HSA contribution", `−$${spousePlan.hsaContribution.toLocaleString()}`]] : []),
+            ["Deductible", `$${spousePlan.deductible.toLocaleString()}`],
+            ["OOP max", `$${spousePlan.oopMax.toLocaleString()}`],
           ].map(([label, val], i) => (
             <div key={i} style={{
               display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -1167,9 +926,23 @@ function ResultsView({ profile, onRestart }) {
 
       {/* Plan cards */}
       <div style={{ display: "flex", gap: 16, marginBottom: 32, flexWrap: "wrap" }}>
-        <PlanCard planKey="copay" result={copayResult} isWinner={winner === "copay"} />
-        <PlanCard planKey="cdhp" result={cdhpResult} isWinner={winner === "cdhp"} />
+        <PlanCard planKey="copay" result={copayResult} isWinner={winner === "copay"} isCheapest={cheapestKey === "copay"} />
+        <PlanCard planKey="cdhp" result={cdhpResult} isWinner={winner === "cdhp"} isCheapest={cheapestKey === "cdhp"} />
+        {spousePlan && <SpouseCard />}
       </div>
+
+      {/* Spouse approximate note */}
+      {spousePlan && (
+        <div style={{
+          padding: 14, borderRadius: 10, background: COLORS.blueLight,
+          fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: COLORS.blue, lineHeight: 1.6,
+          marginBottom: 24,
+        }}>
+          <strong>Note:</strong> Spouse plan costs are approximate. The medical cost estimate uses the same usage
+          profile you entered. Actual costs on your spouse's plan will depend on their specific copays,
+          coinsurance rates, and network.
+        </div>
+      )}
 
       {/* Pros & Cons */}
       <div style={{ display: "flex", gap: 16, marginBottom: 32, flexWrap: "wrap" }}>
@@ -1221,11 +994,6 @@ function ResultsView({ profile, onRestart }) {
         }}>Start Over</button>
       </div>
 
-      {/* Spouse Plan Comparison — only shown when spouse coverage is indicated */}
-      {profile.hasSpouseCoverage && (
-        <SpousePlanComparison profile={profile} results={results} />
-      )}
-
       {/* Inline Customized Analysis Chat */}
       <CustomizedAnalysisChat profile={profile} results={results} />
 
@@ -1257,10 +1025,13 @@ export default function App() {
     hospitalDays: 0,
     riskPreference: "",
     hasSpouseCoverage: false,
+    seriousConditions: [],
+    conditionStatus: {},
   });
+  const [spousePlan, setSpousePlan] = useState(null);
 
   const update = (key, val) => setProfile(p => ({ ...p, [key]: val }));
-  const TOTAL_STEPS = 8;
+  const TOTAL_STEPS = 9;
 
   const applyHealthTemplate = useCallback((level) => {
     update("householdHealth", level);
@@ -1272,6 +1043,75 @@ export default function App() {
       setProfile(p => ({ ...p, householdHealth: level, primaryCareVisits: 6, specialistVisits: 5, erVisits: 1, urgentCareVisits: 2, labVisits: 4, imagingScans: 1, mentalHealthVisits: 0, physicalTherapyVisits: 4, genericMeds: 2, brandMeds: 1, nonPreferredMeds: 0, specialtyMeds: 0 }));
     }
   }, []);
+
+  // ─── Spouse plan upload/manual entry state (used in step 8) ───
+  const [spouseActiveTab, setSpouseActiveTab] = useState("upload");
+  const [spouseUploading, setSpouseUploading] = useState(false);
+  const [spouseUploadError, setSpouseUploadError] = useState("");
+  const [spouseManualForm, setSpouseManualForm] = useState({
+    planName: "",
+    monthlyPremium: "",
+    deductible: "",
+    oopMax: "",
+    copay: "",
+    hsaContribution: false,
+    hsaAmount: "",
+  });
+
+  const handleSpouseFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSpouseUploading(true);
+    setSpouseUploadError("");
+    setSpousePlan(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch("/api/parse-plan", {
+        method: "POST",
+        body: formData,
+      });
+      if (!response.ok) throw new Error("Failed to parse plan document");
+      const data = await response.json();
+      setSpousePlan({
+        planName: data.planName || "Spouse's Plan",
+        annualPremium: data.monthlyPremium ? data.monthlyPremium * 12 : 0,
+        deductible: data.deductible || 0,
+        oopMax: data.oopMax || 0,
+        copay: data.copay || 0,
+        hsaContribution: data.hsaContribution || 0,
+      });
+    } catch (err) {
+      setSpouseUploadError("Could not parse the plan document. Please try entering details manually.");
+    }
+    setSpouseUploading(false);
+  };
+
+  const handleSpouseManualSubmit = () => {
+    setSpousePlan({
+      planName: spouseManualForm.planName || "Spouse's Plan",
+      annualPremium: (parseFloat(spouseManualForm.monthlyPremium) || 0) * 12,
+      deductible: parseFloat(spouseManualForm.deductible) || 0,
+      oopMax: parseFloat(spouseManualForm.oopMax) || 0,
+      copay: parseFloat(spouseManualForm.copay) || 0,
+      hsaContribution: spouseManualForm.hsaContribution ? (parseFloat(spouseManualForm.hsaAmount) || 0) : 0,
+    });
+  };
+
+  const updateSpouseManual = (key, val) => setSpouseManualForm(f => ({ ...f, [key]: val }));
+
+  const inputStyle = {
+    width: "100%", padding: "10px 14px", borderRadius: 10,
+    border: `1px solid ${COLORS.border}`, outline: "none",
+    fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+    color: COLORS.text900,
+  };
+
+  const labelStyle = {
+    fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+    color: COLORS.text700, marginBottom: 4, display: "block",
+  };
 
   if (step === TOTAL_STEPS) {
     return (
@@ -1285,7 +1125,7 @@ export default function App() {
         <div style={{ maxWidth: 700, margin: "0 auto", padding: "0 20px 12px" }}>
           <GreenhillLogo size={30} />
         </div>
-        <ResultsView profile={profile} onRestart={() => { setStep(0); }} />
+        <ResultsView profile={profile} spousePlan={spousePlan} onRestart={() => { setStep(0); setSpousePlan(null); }} />
       </div>
     );
   }
@@ -1297,6 +1137,7 @@ export default function App() {
         @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         * { box-sizing: border-box; }
         input::placeholder { color: ${COLORS.text300}; }
+        @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
 
       {/* Header */}
@@ -1457,14 +1298,102 @@ export default function App() {
           </StepContainer>
         )}
 
-        {/* Step 5: Prescriptions */}
+        {/* Step 5: Serious Health Conditions */}
         {step === 5 && (
           <StepContainer
-            title="Prescription medications"
-            subtitle="Count the number of ongoing monthly medications for everyone on the plan. Don't include short-term prescriptions like antibiotics."
+            title="Are you or a family member managing a serious health condition?"
+            subtitle="These conditions significantly impact which plan saves you more. Your answers stay private."
             onNext={() => setStep(6)}
             onBack={() => setStep(4)}
             step={5}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {[
+                { key: "cancer", icon: "🎗️", label: "Cancer / ongoing oncology treatment" },
+                { key: "addiction", icon: "🛡️", label: "Substance abuse / addiction recovery" },
+                { key: "mentalHealthSerious", icon: "🧠", label: "Serious mental health condition" },
+                { key: "chronicSerious", icon: "⚕️", label: "Other condition requiring frequent specialist care" },
+              ].map(opt => {
+                const isSelected = profile.seriousConditions.includes(opt.key);
+                return (
+                  <div key={opt.key}>
+                    <button onClick={() => {
+                      if (isSelected) {
+                        update("seriousConditions", profile.seriousConditions.filter(c => c !== opt.key));
+                        const newStatus = { ...profile.conditionStatus };
+                        delete newStatus[opt.key];
+                        update("conditionStatus", newStatus);
+                      } else {
+                        update("seriousConditions", [...profile.seriousConditions, opt.key]);
+                        update("conditionStatus", { ...profile.conditionStatus, [opt.key]: "active" });
+                      }
+                    }} style={{
+                      display: "flex", alignItems: "center", gap: 10, width: "100%",
+                      padding: "14px 18px", borderRadius: 12, cursor: "pointer",
+                      background: isSelected ? COLORS.green50 : "#fff",
+                      border: `2px solid ${isSelected ? COLORS.green600 : COLORS.border}`,
+                      textAlign: "left", outline: "none", transition: "all 0.2s ease",
+                    }}>
+                      <span style={{ fontSize: 22 }}>{opt.icon}</span>
+                      <span style={{
+                        flex: 1, fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+                        fontWeight: 600, color: COLORS.text900,
+                      }}>{opt.label}</span>
+                      <div style={{
+                        width: 22, height: 22, borderRadius: 4,
+                        border: `2px solid ${isSelected ? COLORS.green600 : COLORS.text300}`,
+                        background: isSelected ? COLORS.green600 : "transparent",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        transition: "all 0.2s",
+                      }}>
+                        {isSelected && <span style={{ color: "#fff", fontSize: 14, lineHeight: 1 }}>✓</span>}
+                      </div>
+                    </button>
+                    {isSelected && (
+                      <div style={{
+                        display: "flex", gap: 8, marginTop: 8, marginLeft: 48,
+                      }}>
+                        <ToggleChip
+                          selected={profile.conditionStatus[opt.key] === "active"}
+                          label="Active Treatment"
+                          onClick={() => update("conditionStatus", { ...profile.conditionStatus, [opt.key]: "active" })}
+                        />
+                        <ToggleChip
+                          selected={profile.conditionStatus[opt.key] === "maintenance"}
+                          label="Maintenance"
+                          onClick={() => update("conditionStatus", { ...profile.conditionStatus, [opt.key]: "maintenance" })}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              <button onClick={() => {
+                update("seriousConditions", []);
+                update("conditionStatus", {});
+              }} style={{
+                padding: "12px 18px", borderRadius: 12, cursor: "pointer",
+                background: profile.seriousConditions.length === 0 ? COLORS.green50 : "#fff",
+                border: `2px solid ${profile.seriousConditions.length === 0 ? COLORS.green600 : COLORS.border}`,
+                fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600,
+                color: COLORS.text700, textAlign: "left", outline: "none",
+                transition: "all 0.2s ease",
+              }}>
+                None of these apply
+              </button>
+            </div>
+          </StepContainer>
+        )}
+
+        {/* Step 6: Prescriptions */}
+        {step === 6 && (
+          <StepContainer
+            title="Prescription medications"
+            subtitle="Count the number of ongoing monthly medications for everyone on the plan. Don't include short-term prescriptions like antibiotics."
+            onNext={() => setStep(7)}
+            onBack={() => setStep(5)}
+            step={6}
           >
             <div style={{
               background: "#fff", borderRadius: 12, padding: "4px 16px",
@@ -1476,7 +1405,7 @@ export default function App() {
               <div style={{ borderTop: `1px solid ${COLORS.border}` }} />
               <CounterInput label="Brand-name (non-preferred)" value={profile.nonPreferredMeds} onChange={v => update("nonPreferredMeds", v)} />
               <div style={{ borderTop: `1px solid ${COLORS.border}` }} />
-              <CounterInput label="Specialty medications" value={profile.specialtyMeds} onChange={v => update("specialtyMeds", v)} max={5} />
+              <CounterInput label="Specialty medications" value={profile.specialtyMeds} onChange={v => update("specialtyMeds", v)} warnAbove={3} />
             </div>
             <div style={{
               marginTop: 12, padding: 12, borderRadius: 8,
@@ -1489,14 +1418,14 @@ export default function App() {
           </StepContainer>
         )}
 
-        {/* Step 6: Major Events */}
-        {step === 6 && (
+        {/* Step 7: Major Events */}
+        {step === 7 && (
           <StepContainer
             title="Any big events coming up?"
             subtitle="Major medical events can significantly shift which plan is more cost-effective."
-            onNext={() => setStep(7)}
-            onBack={() => setStep(5)}
-            step={6}
+            onNext={() => setStep(8)}
+            onBack={() => setStep(6)}
+            step={7}
           >
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{
@@ -1571,15 +1500,15 @@ export default function App() {
           </StepContainer>
         )}
 
-        {/* Step 7: Preference & Spouse */}
-        {step === 7 && (
+        {/* Step 8: Preferences + Spouse */}
+        {step === 8 && (
           <StepContainer
             title="A couple more things..."
             subtitle="These help us refine the recommendation."
-            onNext={() => setStep(8)}
-            onBack={() => setStep(6)}
+            onNext={() => setStep(9)}
+            onBack={() => setStep(7)}
             nextLabel="See My Results"
-            step={7}
+            step={8}
           >
             <div style={{ marginBottom: 20 }}>
               <div style={{
@@ -1603,20 +1532,172 @@ export default function App() {
               <div style={{
                 background: "#fff", borderRadius: 12, padding: "16px 20px",
                 border: `1px solid ${COLORS.border}`,
-                display: "flex", justifyContent: "space-between", alignItems: "center",
               }}>
-                <div>
-                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text900 }}>
-                    Does your spouse have their own employer coverage?
+                <div style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                }}>
+                  <div>
+                    <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text900 }}>
+                      Does your spouse have their own employer coverage?
+                    </div>
+                    <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: COLORS.text500, marginTop: 2 }}>
+                      We can compare Greenhill plans against your spouse's plan
+                    </div>
                   </div>
-                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: COLORS.text500, marginTop: 2 }}>
-                    You can explore this with the chat advisor after seeing results
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <ToggleChip selected={profile.hasSpouseCoverage} label="Yes" onClick={() => update("hasSpouseCoverage", true)} />
+                    <ToggleChip selected={!profile.hasSpouseCoverage} label="No" onClick={() => { update("hasSpouseCoverage", false); setSpousePlan(null); }} />
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <ToggleChip selected={profile.hasSpouseCoverage} label="Yes" onClick={() => update("hasSpouseCoverage", true)} />
-                  <ToggleChip selected={!profile.hasSpouseCoverage} label="No" onClick={() => update("hasSpouseCoverage", false)} />
-                </div>
+
+                {/* Inline spouse plan entry */}
+                {profile.hasSpouseCoverage && (
+                  <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${COLORS.border}` }}>
+                    {/* Tabs */}
+                    <div style={{ display: "flex", marginBottom: 16, borderRadius: 8, overflow: "hidden", border: `1px solid ${COLORS.border}` }}>
+                      {[
+                        { key: "upload", label: "Upload Plan Document" },
+                        { key: "manual", label: "Enter Details Manually" },
+                      ].map(tab => (
+                        <button key={tab.key} onClick={() => setSpouseActiveTab(tab.key)} style={{
+                          flex: 1, padding: "10px 12px", border: "none",
+                          background: spouseActiveTab === tab.key ? COLORS.green50 : "#fff",
+                          cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                          fontSize: 12, fontWeight: spouseActiveTab === tab.key ? 600 : 400,
+                          color: spouseActiveTab === tab.key ? COLORS.green700 : COLORS.text500,
+                          transition: "all 0.2s",
+                          borderBottom: spouseActiveTab === tab.key ? `2px solid ${COLORS.green600}` : "2px solid transparent",
+                        }}>{tab.label}</button>
+                      ))}
+                    </div>
+
+                    {spouseActiveTab === "upload" && !spousePlan && (
+                      <div>
+                        <div style={{
+                          border: `2px dashed ${COLORS.border}`, borderRadius: 12,
+                          padding: 24, textAlign: "center", background: COLORS.cream,
+                        }}>
+                          {spouseUploading ? (
+                            <div>
+                              <div style={{
+                                width: 32, height: 32, borderRadius: 16, margin: "0 auto 8px",
+                                border: `3px solid ${COLORS.green100}`,
+                                borderTopColor: COLORS.green600,
+                                animation: "spin 1s linear infinite",
+                              }} />
+                              <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: COLORS.text500 }}>
+                                Analyzing plan document...
+                              </div>
+                            </div>
+                          ) : (
+                            <div>
+                              <div style={{ fontSize: 28, marginBottom: 6 }}>📄</div>
+                              <div style={{
+                                fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+                                fontWeight: 600, color: COLORS.text900, marginBottom: 4,
+                              }}>Upload spouse's plan summary (PDF)</div>
+                              <label style={{
+                                display: "inline-block", padding: "8px 20px", borderRadius: 8,
+                                background: COLORS.green700, color: "#fff", cursor: "pointer",
+                                fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600,
+                                marginTop: 8,
+                              }}>
+                                Choose File
+                                <input type="file" accept=".pdf" onChange={handleSpouseFileUpload}
+                                  style={{ display: "none" }} />
+                              </label>
+                            </div>
+                          )}
+                        </div>
+                        {spouseUploadError && (
+                          <div style={{
+                            marginTop: 8, padding: 10, borderRadius: 8,
+                            background: COLORS.redLight,
+                            fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: COLORS.red, lineHeight: 1.5,
+                          }}>{spouseUploadError}</div>
+                        )}
+                      </div>
+                    )}
+
+                    {spouseActiveTab === "manual" && !spousePlan && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                        <div>
+                          <label style={labelStyle}>Plan name</label>
+                          <input type="text" value={spouseManualForm.planName} onChange={e => updateSpouseManual("planName", e.target.value)}
+                            placeholder="e.g., Aetna PPO" style={inputStyle} />
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Monthly premium for adding you</label>
+                          <input type="number" value={spouseManualForm.monthlyPremium} onChange={e => updateSpouseManual("monthlyPremium", e.target.value)}
+                            placeholder="0" style={inputStyle} />
+                        </div>
+                        <div style={{ display: "flex", gap: 12 }}>
+                          <div style={{ flex: 1 }}>
+                            <label style={labelStyle}>Deductible (individual)</label>
+                            <input type="number" value={spouseManualForm.deductible} onChange={e => updateSpouseManual("deductible", e.target.value)}
+                              placeholder="0" style={inputStyle} />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <label style={labelStyle}>OOP max (individual)</label>
+                            <input type="number" value={spouseManualForm.oopMax} onChange={e => updateSpouseManual("oopMax", e.target.value)}
+                              placeholder="0" style={inputStyle} />
+                          </div>
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Typical copay for a doctor visit</label>
+                          <input type="number" value={spouseManualForm.copay} onChange={e => updateSpouseManual("copay", e.target.value)}
+                            placeholder="0" style={inputStyle} />
+                        </div>
+                        <div style={{
+                          background: COLORS.green50, borderRadius: 10, padding: "10px 14px",
+                          display: "flex", justifyContent: "space-between", alignItems: "center",
+                        }}>
+                          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600, color: COLORS.text900 }}>
+                            Employer HSA contribution?
+                          </div>
+                          <div style={{ display: "flex", gap: 6 }}>
+                            <ToggleChip selected={spouseManualForm.hsaContribution} label="Yes" onClick={() => updateSpouseManual("hsaContribution", true)} />
+                            <ToggleChip selected={!spouseManualForm.hsaContribution} label="No" onClick={() => updateSpouseManual("hsaContribution", false)} />
+                          </div>
+                        </div>
+                        {spouseManualForm.hsaContribution && (
+                          <div>
+                            <label style={labelStyle}>Annual HSA employer contribution</label>
+                            <input type="number" value={spouseManualForm.hsaAmount} onChange={e => updateSpouseManual("hsaAmount", e.target.value)}
+                              placeholder="0" style={inputStyle} />
+                          </div>
+                        )}
+                        <button onClick={handleSpouseManualSubmit} style={{
+                          padding: "10px 20px", borderRadius: 8, border: "none",
+                          background: COLORS.green700, color: "#fff", cursor: "pointer",
+                          fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600,
+                          alignSelf: "flex-end",
+                        }}>Save Spouse Plan</button>
+                      </div>
+                    )}
+
+                    {spousePlan && (
+                      <div style={{
+                        padding: 14, borderRadius: 10, background: COLORS.green50,
+                        display: "flex", justifyContent: "space-between", alignItems: "center",
+                      }}>
+                        <div>
+                          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.green900 }}>
+                            ✓ {spousePlan.planName} saved
+                          </div>
+                          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: COLORS.text500, marginTop: 2 }}>
+                            ${spousePlan.annualPremium.toLocaleString()}/year premium · ${spousePlan.deductible.toLocaleString()} deductible
+                          </div>
+                        </div>
+                        <button onClick={() => setSpousePlan(null)} style={{
+                          padding: "6px 14px", borderRadius: 6, border: `1px solid ${COLORS.border}`,
+                          background: "#fff", cursor: "pointer",
+                          fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: COLORS.text500,
+                        }}>Edit</button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </StepContainer>
