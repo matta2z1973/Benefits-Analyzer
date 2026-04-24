@@ -179,54 +179,68 @@ function estimateAnnualCost(profile, planKey) {
 }
 
 // ─── STYLES ──────────────────────────────────────────────────
+// Palette aligned with the Greenhill School Brand Guidelines.
+// Primary: Forest Green #004820, Cool Green #00AE77, Light Green #11DE92, Copper #C87337.
+// Secondary: Dark Green #092B1C, Mint #94FFD6, Ivory #F1EFE4.
 const COLORS = {
-  green900: "#1B3C28",
-  green700: "#2A5A3B",
-  green600: "#357A4D",
-  green500: "#4A9960",
-  green100: "#E8F0E6",
-  green50: "#F4F8F3",
-  sage: "#B5C9A1",
-  sageMuted: "#C8D8B8",
-  cream: "#FAFAF5",
-  warmWhite: "#FEFDFB",
-  gold: "#C5933A",
-  goldLight: "#F5ECD7",
-  text900: "#1A1A1A",
-  text700: "#3D3D3D",
-  text500: "#6B6B6B",
-  text300: "#A0A0A0",
-  border: "#E2E2DA",
-  red: "#C0392B",
+  green900: "#092B1C",   // Dark Green — deepest dark surfaces
+  green700: "#004820",   // Forest Green — primary brand / CTAs / headings
+  green600: "#00AE77",   // Cool Green — selection / interactive accents
+  green500: "#11DE92",   // Light Green — decorative accents
+  green100: "#D7F5E8",   // tint — subtle highlight bg
+  green50:  "#F0FBF6",   // tint — lightest selection bg
+  sage:     "#11DE92",   // Light Green (logo decorative role)
+  sageMuted:"#94FFD6",   // Mint
+  cream:    "#F1EFE4",   // Ivory — page background
+  warmWhite:"#FFFFFF",
+  gold:     "#C87337",   // Copper — warm accent
+  goldLight:"#F5E6D4",   // light copper tint
+  text900:  "#1A1A1A",
+  text700:  "#3D3D3D",
+  text500:  "#6B6B6B",
+  text300:  "#A0A0A0",
+  border:   "#E2E2DA",
+  red:      "#C0392B",
   redLight: "#FDECEC",
-  blue: "#2471A3",
-  blueLight: "#EBF5FB",
+  blue:     "#2471A3",
+  blueLight:"#EBF5FB",
 };
 
 // ─── COMPONENTS ──────────────────────────────────────────────
 
-function GreenhillLogo({ size = 32 }) {
+// Vertical wordmark matching the Greenhill School Brand Guidelines:
+// "Greenhill" in bold transitional serif, with horizontal rules flanking
+// "SCHOOL" in spaced sans-serif caps directly beneath.
+function GreenhillLogo({ size = 40, color }) {
+  const brand = color || COLORS.green700; // Forest Green
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+    <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "stretch" }}>
       <div style={{
-        width: size, height: size, borderRadius: 4,
-        background: COLORS.sage,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontFamily: "'Libre Baskerville', Georgia, serif",
-        fontSize: size * 0.6, fontWeight: 700, color: "#fff",
-        letterSpacing: -1,
-      }}>G</div>
-      <div>
-        <div style={{
-          fontFamily: "'Libre Baskerville', Georgia, serif",
-          fontSize: size * 0.5, fontWeight: 700, color: COLORS.green900,
-          lineHeight: 1.1, letterSpacing: 0.5,
-        }}>Greenhill</div>
-        <div style={{
-          fontFamily: "'DM Sans', Helvetica, sans-serif",
-          fontSize: size * 0.28, color: COLORS.text500,
-          letterSpacing: 3, textTransform: "uppercase", lineHeight: 1.2,
-        }}>SCHOOL</div>
+        fontFamily: "'Lora', Georgia, serif",
+        fontSize: size,
+        fontWeight: 700,
+        color: brand,
+        lineHeight: 1,
+        letterSpacing: -0.5,
+        textAlign: "center",
+      }}>Greenhill</div>
+      <div style={{
+        display: "flex", alignItems: "center",
+        gap: size * 0.18,
+        marginTop: size * 0.14,
+      }}>
+        <div style={{ flex: 1, height: Math.max(1, size * 0.045), background: brand }} />
+        <span style={{
+          fontFamily: "'Hanken Grotesk', Helvetica, sans-serif",
+          fontSize: size * 0.3,
+          fontWeight: 700,
+          color: brand,
+          letterSpacing: size * 0.14,
+          paddingLeft: size * 0.14, // visually balance the right-side letter-spacing
+          lineHeight: 1,
+          whiteSpace: "nowrap",
+        }}>SCHOOL</span>
+        <div style={{ flex: 1, height: Math.max(1, size * 0.045), background: brand }} />
       </div>
     </div>
   );
@@ -259,18 +273,18 @@ function OptionCard({ selected, onClick, title, subtitle, icon, recommended }) {
           position: "absolute", top: -10, right: 12,
           background: COLORS.gold, color: "#fff",
           fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10,
-          fontFamily: "'DM Sans', sans-serif", letterSpacing: 0.5,
+          fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", letterSpacing: 0.5,
         }}>POPULAR</span>
       )}
       <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%" }}>
         <span style={{ fontSize: 22 }}>{icon}</span>
         <div style={{ flex: 1 }}>
           <div style={{
-            fontFamily: "'DM Sans', sans-serif", fontWeight: 600,
+            fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontWeight: 600,
             fontSize: 15, color: COLORS.text900,
           }}>{title}</div>
           {subtitle && <div style={{
-            fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+            fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 13,
             color: COLORS.text500, marginTop: 2,
           }}>{subtitle}</div>}
         </div>
@@ -292,7 +306,7 @@ function CounterInput({ value, onChange, min = 0, max = 999, label, warnAbove = 
   return (
     <div style={{ padding: "10px 0" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: COLORS.text700 }}>{label}</span>
+        <span style={{ fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 14, color: COLORS.text700 }}>{label}</span>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button onClick={() => onChange(Math.max(min, value - 1))} style={{
             width: 32, height: 32, borderRadius: 8, border: `1px solid ${COLORS.border}`,
@@ -310,7 +324,7 @@ function CounterInput({ value, onChange, min = 0, max = 999, label, warnAbove = 
             }}
             onFocus={e => e.target.select()}
             style={{
-              fontFamily: "'DM Sans', sans-serif", fontSize: 16, fontWeight: 600,
+              fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 16, fontWeight: 600,
               color: showWarning ? COLORS.gold : COLORS.text900, width: 44, textAlign: "center",
               border: `1px solid ${showWarning ? COLORS.gold : COLORS.border}`, borderRadius: 6,
               padding: "2px 0", outline: "none", MozAppearance: "textfield",
@@ -325,7 +339,7 @@ function CounterInput({ value, onChange, min = 0, max = 999, label, warnAbove = 
       </div>
       {showWarning && (
         <div style={{
-          fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: COLORS.gold,
+          fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 11, color: COLORS.gold,
           textAlign: "right", marginTop: 4,
         }}>That seems high — double-check this is the annual total for all covered members.</div>
       )}
@@ -340,12 +354,12 @@ function StepContainer({ title, subtitle, children, onNext, onBack, nextLabel = 
     }}>
       <div style={{ marginBottom: 28 }}>
         <h2 style={{
-          fontFamily: "'Libre Baskerville', Georgia, serif",
+          fontFamily: "'Lora', Georgia, serif",
           fontSize: 22, fontWeight: 700, color: COLORS.green900,
           margin: 0, lineHeight: 1.3,
         }}>{title}</h2>
         {subtitle && <p style={{
-          fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+          fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 14,
           color: COLORS.text500, margin: "8px 0 0", lineHeight: 1.5,
         }}>{subtitle}</p>}
       </div>
@@ -355,14 +369,14 @@ function StepContainer({ title, subtitle, children, onNext, onBack, nextLabel = 
           <button onClick={onBack} style={{
             padding: "12px 24px", borderRadius: 10, border: `1px solid ${COLORS.border}`,
             background: "#fff", cursor: "pointer",
-            fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 500, color: COLORS.text500,
+            fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 14, fontWeight: 500, color: COLORS.text500,
           }}>Back</button>
         ) : <div />}
         <button onClick={onNext} disabled={nextDisabled} style={{
           padding: "12px 32px", borderRadius: 10, border: "none",
           background: nextDisabled ? COLORS.text300 : COLORS.green700,
           cursor: nextDisabled ? "default" : "pointer",
-          fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, color: "#fff",
+          fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 14, fontWeight: 600, color: "#fff",
           transition: "background 0.2s",
         }}>{nextLabel}</button>
       </div>
@@ -376,7 +390,7 @@ function ToggleChip({ selected, label, onClick }) {
       padding: "8px 16px", borderRadius: 20,
       border: `1.5px solid ${selected ? COLORS.green600 : COLORS.border}`,
       background: selected ? COLORS.green50 : "#fff",
-      cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+      cursor: "pointer", fontFamily: "'Hanken Grotesk', Helvetica, sans-serif",
       fontSize: 13, fontWeight: selected ? 600 : 400,
       color: selected ? COLORS.green700 : COLORS.text500,
       transition: "all 0.2s",
@@ -538,11 +552,11 @@ Always note this is still an estimate and they should contact HR or Quantum Heal
           transition: "all 0.2s",
         }}>
           <div style={{
-            fontFamily: "'Libre Baskerville', Georgia, serif",
+            fontFamily: "'Lora', Georgia, serif",
             fontSize: 17, fontWeight: 700, color: COLORS.green900, marginBottom: 6,
           }}>Want a More Customized Analysis?</div>
           <div style={{
-            fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: COLORS.text500, lineHeight: 1.4,
+            fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 13, color: COLORS.text500, lineHeight: 1.4,
           }}>Answer a few targeted questions to refine your estimate</div>
         </button>
       </div>
@@ -564,7 +578,7 @@ Always note this is still an estimate and they should contact HR or Quantum Heal
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={COLORS.sage} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
-          <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, color: "#fff" }}>
+          <span style={{ fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 14, fontWeight: 600, color: "#fff" }}>
             Customized Analysis
           </span>
         </div>
@@ -586,7 +600,7 @@ Always note this is still an estimate and they should contact HR or Quantum Heal
             maxWidth: "85%", padding: "10px 14px", borderRadius: 12,
             background: m.role === "user" ? COLORS.green700 : "#fff",
             color: m.role === "user" ? "#fff" : COLORS.text700,
-            fontFamily: "'DM Sans', sans-serif", fontSize: 13, lineHeight: 1.6,
+            fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 13, lineHeight: 1.6,
             whiteSpace: "pre-wrap",
             border: m.role === "assistant" ? `1px solid ${COLORS.border}` : "none",
           }}>{m.content}</div>
@@ -594,7 +608,7 @@ Always note this is still an estimate and they should contact HR or Quantum Heal
         {loading && (
           <div style={{
             alignSelf: "flex-start", padding: "10px 14px", borderRadius: 12,
-            background: "#fff", fontFamily: "'DM Sans', sans-serif",
+            background: "#fff", fontFamily: "'Hanken Grotesk', Helvetica, sans-serif",
             fontSize: 13, color: COLORS.text500,
             border: `1px solid ${COLORS.border}`,
           }}>Thinking...</div>
@@ -607,7 +621,7 @@ Always note this is still an estimate and they should contact HR or Quantum Heal
               <button key={i} onClick={() => sendMessage(q)} style={{
                 padding: "8px 14px", borderRadius: 20,
                 background: "#fff", border: `1px solid ${COLORS.green600}`,
-                cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                cursor: "pointer", fontFamily: "'Hanken Grotesk', Helvetica, sans-serif",
                 fontSize: 12, color: COLORS.green700, transition: "all 0.2s",
               }}>"{q}"</button>
             ))}
@@ -629,14 +643,14 @@ Always note this is still an estimate and they should contact HR or Quantum Heal
           style={{
             flex: 1, padding: "10px 14px", borderRadius: 10,
             border: `1px solid ${COLORS.border}`, outline: "none",
-            fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+            fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 13,
             color: COLORS.text900,
           }}
         />
         <button onClick={() => sendMessage()} disabled={loading || !input.trim()} style={{
           padding: "10px 16px", borderRadius: 10, border: "none",
           background: COLORS.green700, color: "#fff", cursor: "pointer",
-          fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600,
+          fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 13, fontWeight: 600,
           opacity: loading || !input.trim() ? 0.5 : 1,
         }}>Send</button>
       </div>
@@ -684,12 +698,12 @@ function ResultsView({ profile, spousePlan, onRestart }) {
             position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)",
             background: COLORS.green700, color: "#fff",
             padding: "4px 16px", borderRadius: 20,
-            fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 700,
+            fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 12, fontWeight: 700,
             letterSpacing: 0.5, whiteSpace: "nowrap",
           }}>BETTER VALUE</div>
         )}
         <h3 style={{
-          fontFamily: "'Libre Baskerville', Georgia, serif",
+          fontFamily: "'Lora', Georgia, serif",
           fontSize: 18, fontWeight: 700, color: COLORS.green900,
           margin: "8px 0 16px", textAlign: "center",
         }}>{plan.shortName} Plan</h3>
@@ -699,11 +713,11 @@ function ResultsView({ profile, spousePlan, onRestart }) {
           borderBottom: `1px solid ${COLORS.border}`,
         }}>
           <div style={{
-            fontFamily: "'DM Sans', sans-serif", fontSize: 11,
+            fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 11,
             color: COLORS.text500, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4,
           }}>Estimated Annual Cost</div>
           <div style={{
-            fontFamily: "'Libre Baskerville', Georgia, serif",
+            fontFamily: "'Lora', Georgia, serif",
             fontSize: 32, fontWeight: 700,
             color: isCheapest ? COLORS.green700 : COLORS.text900,
           }}>${result.totalOutOfPocket.toLocaleString()}</div>
@@ -719,7 +733,7 @@ function ResultsView({ profile, spousePlan, onRestart }) {
           ].map(([label, val], i) => (
             <div key={i} style={{
               display: "flex", justifyContent: "space-between", alignItems: "center",
-              fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+              fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 13,
             }}>
               <span style={{ color: COLORS.text500 }}>{label}</span>
               <span style={{
@@ -748,12 +762,12 @@ function ResultsView({ profile, spousePlan, onRestart }) {
             position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)",
             background: COLORS.green700, color: "#fff",
             padding: "4px 16px", borderRadius: 20,
-            fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 700,
+            fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 12, fontWeight: 700,
             letterSpacing: 0.5, whiteSpace: "nowrap",
           }}>BETTER VALUE</div>
         )}
         <h3 style={{
-          fontFamily: "'Libre Baskerville', Georgia, serif",
+          fontFamily: "'Lora', Georgia, serif",
           fontSize: 18, fontWeight: 700, color: COLORS.green900,
           margin: "8px 0 16px", textAlign: "center",
         }}>{spousePlan.planName}</h3>
@@ -763,11 +777,11 @@ function ResultsView({ profile, spousePlan, onRestart }) {
           borderBottom: `1px solid ${COLORS.border}`,
         }}>
           <div style={{
-            fontFamily: "'DM Sans', sans-serif", fontSize: 11,
+            fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 11,
             color: COLORS.text500, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4,
           }}>Estimated Annual Cost</div>
           <div style={{
-            fontFamily: "'Libre Baskerville', Georgia, serif",
+            fontFamily: "'Lora', Georgia, serif",
             fontSize: 32, fontWeight: 700,
             color: isCheapest ? COLORS.green700 : COLORS.text900,
           }}>${roundedTotal.toLocaleString()}</div>
@@ -783,7 +797,7 @@ function ResultsView({ profile, spousePlan, onRestart }) {
           ].map(([label, val], i) => (
             <div key={i} style={{
               display: "flex", justifyContent: "space-between", alignItems: "center",
-              fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+              fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 13,
             }}>
               <span style={{ color: COLORS.text500 }}>{label}</span>
               <span style={{
@@ -826,11 +840,11 @@ function ResultsView({ profile, spousePlan, onRestart }) {
     <div style={{ maxWidth: 700, margin: "0 auto", padding: "0 20px", animation: "fadeIn 0.5s ease" }}>
       <div style={{ textAlign: "center", marginBottom: 32 }}>
         <h2 style={{
-          fontFamily: "'Libre Baskerville', Georgia, serif",
+          fontFamily: "'Lora', Georgia, serif",
           fontSize: 24, fontWeight: 700, color: COLORS.green900, margin: "0 0 8px",
         }}>Your Plan Comparison</h2>
         <p style={{
-          fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+          fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 14,
           color: COLORS.text500, margin: 0,
         }}>Based on your {tierLabel} coverage and estimated healthcare usage</p>
       </div>
@@ -841,7 +855,7 @@ function ResultsView({ profile, spousePlan, onRestart }) {
         background: COLORS.green50, border: `1px solid ${COLORS.sage}`,
         textAlign: "center", marginBottom: 28,
       }}>
-        <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 15, color: COLORS.green900 }}>
+        <span style={{ fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 15, color: COLORS.green900 }}>
           The <strong>{PLANS[winner].shortName} Plan</strong> could save you approximately{" "}
           <strong style={{ color: COLORS.green600 }}>${savings.toLocaleString()}</strong> this year
         </span>
@@ -858,7 +872,7 @@ function ResultsView({ profile, spousePlan, onRestart }) {
       {spousePlan && (
         <div style={{
           padding: 14, borderRadius: 10, background: COLORS.blueLight,
-          fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: COLORS.blue, lineHeight: 1.6,
+          fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 12, color: COLORS.blue, lineHeight: 1.6,
           marginBottom: 24,
         }}>
           <strong>Note:</strong> Spouse plan costs are approximate. The medical cost estimate uses the same usage
@@ -875,14 +889,14 @@ function ResultsView({ profile, spousePlan, onRestart }) {
         ].map(({ key, label, items }) => (
           <div key={key} style={{ flex: 1, minWidth: 250 }}>
             <h4 style={{
-              fontFamily: "'Libre Baskerville', Georgia, serif",
+              fontFamily: "'Lora', Georgia, serif",
               fontSize: 15, fontWeight: 700, color: COLORS.green900, margin: "0 0 12px",
             }}>{label}</h4>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {items.map((item, i) => (
                 <div key={i} style={{
                   display: "flex", gap: 8, alignItems: "flex-start",
-                  fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: COLORS.text700,
+                  fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 13, color: COLORS.text700,
                   lineHeight: 1.4,
                 }}>
                   <span style={{
@@ -901,7 +915,7 @@ function ResultsView({ profile, spousePlan, onRestart }) {
       {/* Disclaimer */}
       <div style={{
         padding: 16, borderRadius: 10, background: COLORS.goldLight,
-        fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: COLORS.text700,
+        fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 12, color: COLORS.text700,
         lineHeight: 1.6, marginBottom: 24,
       }}>
         <strong>Important:</strong> These are estimates based on average healthcare costs and the information you provided.
@@ -913,7 +927,7 @@ function ResultsView({ profile, spousePlan, onRestart }) {
         <button onClick={onRestart} style={{
           padding: "12px 28px", borderRadius: 10, border: `1px solid ${COLORS.border}`,
           background: "#fff", cursor: "pointer",
-          fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 500, color: COLORS.text500,
+          fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 14, fontWeight: 500, color: COLORS.text500,
         }}>Start Over</button>
       </div>
 
@@ -1027,12 +1041,12 @@ export default function App() {
   const inputStyle = {
     width: "100%", padding: "10px 14px", borderRadius: 10,
     border: `1px solid ${COLORS.border}`, outline: "none",
-    fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+    fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 13,
     color: COLORS.text900,
   };
 
   const labelStyle = {
-    fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+    fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 13,
     color: COLORS.text700, marginBottom: 4, display: "block",
   };
 
@@ -1040,13 +1054,13 @@ export default function App() {
     return (
       <div style={{ minHeight: "100vh", background: COLORS.cream, paddingTop: 20, paddingBottom: 80 }}>
         <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+          @import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap');
           @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
           * { box-sizing: border-box; }
           input::placeholder { color: ${COLORS.text300}; }
         `}</style>
         <div style={{ maxWidth: 700, margin: "0 auto", padding: "0 20px 12px" }}>
-          <GreenhillLogo size={30} />
+          <GreenhillLogo size={36} />
         </div>
         <ResultsView profile={profile} spousePlan={spousePlan} onRestart={() => { setStep(0); setSpousePlan(null); }} />
       </div>
@@ -1056,7 +1070,7 @@ export default function App() {
   return (
     <div style={{ minHeight: "100vh", background: COLORS.cream, display: "flex", flexDirection: "column" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap');
         @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         * { box-sizing: border-box; }
         input::placeholder { color: ${COLORS.text300}; }
@@ -1065,14 +1079,14 @@ export default function App() {
 
       {/* Header */}
       <div style={{ padding: "20px 24px 16px", maxWidth: 600, margin: "0 auto", width: "100%" }}>
-        <GreenhillLogo size={30} />
+        <GreenhillLogo size={36} />
       </div>
 
       {step > 0 && (
         <div style={{ maxWidth: 560, margin: "0 auto 20px", width: "100%", padding: "0 20px" }}>
           <ProgressBar step={step} totalSteps={TOTAL_STEPS} />
           <div style={{
-            fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: COLORS.text300,
+            fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 11, color: COLORS.text300,
             marginTop: 6, textAlign: "right",
           }}>Step {step} of {TOTAL_STEPS}</div>
         </div>
@@ -1086,19 +1100,23 @@ export default function App() {
             maxWidth: 520, margin: "0 auto", padding: "0 20px", textAlign: "center",
             animation: "fadeIn 0.5s ease",
           }}>
+            {/* "G" spirit mark — white on Forest Green, per Greenhill brand guide */}
             <div style={{
-              width: 80, height: 80, borderRadius: 20, margin: "0 auto 24px",
-              background: `linear-gradient(135deg, ${COLORS.sage}, ${COLORS.green600})`,
+              width: 84, height: 84, borderRadius: 18, margin: "0 auto 24px",
+              background: COLORS.green700,
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 36,
-            }}>🏥</div>
+              fontFamily: "'Lora', Georgia, serif",
+              fontSize: 54, fontWeight: 700, color: "#fff",
+              lineHeight: 1, letterSpacing: -2,
+              boxShadow: `0 6px 16px rgba(0, 72, 32, 0.18)`,
+            }}>G</div>
             <h1 style={{
-              fontFamily: "'Libre Baskerville', Georgia, serif",
+              fontFamily: "'Lora', Georgia, serif",
               fontSize: 26, fontWeight: 700, color: COLORS.green900,
               margin: "0 0 12px", lineHeight: 1.3,
             }}>Benefits Plan Advisor</h1>
             <p style={{
-              fontFamily: "'DM Sans', sans-serif", fontSize: 15,
+              fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 15,
               color: COLORS.text500, margin: "0 0 8px", lineHeight: 1.6,
             }}>
               Find the right healthcare plan for you and your family.
@@ -1106,7 +1124,7 @@ export default function App() {
               and show you a personalized cost comparison.
             </p>
             <p style={{
-              fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+              fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 13,
               color: COLORS.text300, margin: "0 0 32px", lineHeight: 1.5,
             }}>
               Takes about 3 minutes · No exact numbers needed · Your answers stay in your browser
@@ -1114,8 +1132,8 @@ export default function App() {
             <button onClick={() => setStep(1)} style={{
               padding: "14px 40px", borderRadius: 12, border: "none",
               background: COLORS.green700, cursor: "pointer",
-              fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 600, color: "#fff",
-              boxShadow: `0 4px 12px rgba(27,60,40,0.2)`,
+              fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 15, fontWeight: 600, color: "#fff",
+              boxShadow: `0 4px 12px rgba(0, 72, 32, 0.22)`,
             }}>Get Started</button>
           </div>
         )}
@@ -1213,7 +1231,7 @@ export default function App() {
             <div style={{
               marginTop: 12, padding: 12, borderRadius: 8,
               background: COLORS.blueLight,
-              fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: COLORS.blue, lineHeight: 1.5,
+              fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 12, color: COLORS.blue, lineHeight: 1.5,
             }}>
               💡 <strong>Tip:</strong> The Co-Pay plan charges $20/visit for therapy with no deductible.
               The CDHP covers therapy at no charge, but only after you've met the $3,300 deductible.
@@ -1259,7 +1277,7 @@ export default function App() {
                     }}>
                       <span style={{ fontSize: 22 }}>{opt.icon}</span>
                       <span style={{
-                        flex: 1, fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+                        flex: 1, fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 14,
                         fontWeight: 600, color: COLORS.text900,
                       }}>{opt.label}</span>
                       <div style={{
@@ -1299,7 +1317,7 @@ export default function App() {
                 padding: "12px 18px", borderRadius: 12, cursor: "pointer",
                 background: profile.seriousConditions.length === 0 ? COLORS.green50 : "#fff",
                 border: `2px solid ${profile.seriousConditions.length === 0 ? COLORS.green600 : COLORS.border}`,
-                fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600,
+                fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 14, fontWeight: 600,
                 color: COLORS.text700, textAlign: "left", outline: "none",
                 transition: "all 0.2s ease",
               }}>
@@ -1333,7 +1351,7 @@ export default function App() {
             <div style={{
               marginTop: 12, padding: 12, borderRadius: 8,
               background: COLORS.blueLight,
-              fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: COLORS.blue, lineHeight: 1.5,
+              fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 12, color: COLORS.blue, lineHeight: 1.5,
             }}>
               💡 <strong>Not sure about tiers?</strong> Most common medications (metformin, lisinopril, etc.) are generic.
               If you're unsure, check <a href="https://www.caremark.com" target="_blank" style={{ color: COLORS.blue }}>caremark.com</a> or ask the chat advisor after you see your results.
@@ -1357,10 +1375,10 @@ export default function App() {
                 display: "flex", justifyContent: "space-between", alignItems: "center",
               }}>
                 <div>
-                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text900 }}>
+                  <div style={{ fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text900 }}>
                     🤰 Expecting a baby?
                   </div>
-                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: COLORS.text500, marginTop: 2 }}>
+                  <div style={{ fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 12, color: COLORS.text500, marginTop: 2 }}>
                     Pregnancy, delivery, and postpartum care
                   </div>
                 </div>
@@ -1376,10 +1394,10 @@ export default function App() {
                 display: "flex", justifyContent: "space-between", alignItems: "center",
               }}>
                 <div>
-                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text900 }}>
+                  <div style={{ fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text900 }}>
                     🔧 Expecting a surgery?
                   </div>
-                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: COLORS.text500, marginTop: 2 }}>
+                  <div style={{ fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 12, color: COLORS.text500, marginTop: 2 }}>
                     Planned outpatient or inpatient procedure
                   </div>
                 </div>
@@ -1395,10 +1413,10 @@ export default function App() {
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
-                    <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text900 }}>
+                    <div style={{ fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text900 }}>
                       🛏️ Expected hospital stays?
                     </div>
-                    <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: COLORS.text500, marginTop: 2 }}>
+                    <div style={{ fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 12, color: COLORS.text500, marginTop: 2 }}>
                       Nights in the hospital (not including delivery)
                     </div>
                   </div>
@@ -1408,7 +1426,7 @@ export default function App() {
                       background: "#fff", cursor: "pointer", fontSize: 18, color: COLORS.text500,
                       display: "flex", alignItems: "center", justifyContent: "center",
                     }}>−</button>
-                    <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 16, fontWeight: 600, width: 24, textAlign: "center" }}>
+                    <span style={{ fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 16, fontWeight: 600, width: 24, textAlign: "center" }}>
                       {profile.hospitalDays}
                     </span>
                     <button onClick={() => update("hospitalDays", Math.min(30, profile.hospitalDays + 1))} style={{
@@ -1435,7 +1453,7 @@ export default function App() {
           >
             <div style={{ marginBottom: 20 }}>
               <div style={{
-                fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600,
+                fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 14, fontWeight: 600,
                 color: COLORS.text900, marginBottom: 10,
               }}>What matters more to you?</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -1460,10 +1478,10 @@ export default function App() {
                   display: "flex", justifyContent: "space-between", alignItems: "center",
                 }}>
                   <div>
-                    <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text900 }}>
+                    <div style={{ fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 14, fontWeight: 600, color: COLORS.text900 }}>
                       Does your spouse have their own employer coverage?
                     </div>
-                    <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: COLORS.text500, marginTop: 2 }}>
+                    <div style={{ fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 12, color: COLORS.text500, marginTop: 2 }}>
                       We can compare Greenhill plans against your spouse's plan
                     </div>
                   </div>
@@ -1485,7 +1503,7 @@ export default function App() {
                         <button key={tab.key} onClick={() => setSpouseActiveTab(tab.key)} style={{
                           flex: 1, padding: "10px 12px", border: "none",
                           background: spouseActiveTab === tab.key ? COLORS.green50 : "#fff",
-                          cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                          cursor: "pointer", fontFamily: "'Hanken Grotesk', Helvetica, sans-serif",
                           fontSize: 12, fontWeight: spouseActiveTab === tab.key ? 600 : 400,
                           color: spouseActiveTab === tab.key ? COLORS.green700 : COLORS.text500,
                           transition: "all 0.2s",
@@ -1508,7 +1526,7 @@ export default function App() {
                                 borderTopColor: COLORS.green600,
                                 animation: "spin 1s linear infinite",
                               }} />
-                              <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: COLORS.text500 }}>
+                              <div style={{ fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 13, color: COLORS.text500 }}>
                                 Analyzing plan document...
                               </div>
                             </div>
@@ -1516,13 +1534,13 @@ export default function App() {
                             <div>
                               <div style={{ fontSize: 28, marginBottom: 6 }}>📄</div>
                               <div style={{
-                                fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+                                fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 13,
                                 fontWeight: 600, color: COLORS.text900, marginBottom: 4,
                               }}>Upload spouse's plan summary (PDF)</div>
                               <label style={{
                                 display: "inline-block", padding: "8px 20px", borderRadius: 8,
                                 background: COLORS.green700, color: "#fff", cursor: "pointer",
-                                fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600,
+                                fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 12, fontWeight: 600,
                                 marginTop: 8,
                               }}>
                                 Choose File
@@ -1536,7 +1554,7 @@ export default function App() {
                           <div style={{
                             marginTop: 8, padding: 10, borderRadius: 8,
                             background: COLORS.redLight,
-                            fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: COLORS.red, lineHeight: 1.5,
+                            fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 11, color: COLORS.red, lineHeight: 1.5,
                           }}>{spouseUploadError}</div>
                         )}
                       </div>
@@ -1575,7 +1593,7 @@ export default function App() {
                           background: COLORS.green50, borderRadius: 10, padding: "10px 14px",
                           display: "flex", justifyContent: "space-between", alignItems: "center",
                         }}>
-                          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600, color: COLORS.text900 }}>
+                          <div style={{ fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 12, fontWeight: 600, color: COLORS.text900 }}>
                             Employer HSA contribution?
                           </div>
                           <div style={{ display: "flex", gap: 6 }}>
@@ -1593,7 +1611,7 @@ export default function App() {
                         <button onClick={handleSpouseManualSubmit} style={{
                           padding: "10px 20px", borderRadius: 8, border: "none",
                           background: COLORS.green700, color: "#fff", cursor: "pointer",
-                          fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600,
+                          fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 13, fontWeight: 600,
                           alignSelf: "flex-end",
                         }}>Save Spouse Plan</button>
                       </div>
@@ -1605,17 +1623,17 @@ export default function App() {
                         display: "flex", justifyContent: "space-between", alignItems: "center",
                       }}>
                         <div>
-                          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.green900 }}>
+                          <div style={{ fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 13, fontWeight: 600, color: COLORS.green900 }}>
                             ✓ {spousePlan.planName} saved
                           </div>
-                          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: COLORS.text500, marginTop: 2 }}>
+                          <div style={{ fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 11, color: COLORS.text500, marginTop: 2 }}>
                             ${spousePlan.annualPremium.toLocaleString()}/year premium · ${spousePlan.deductible.toLocaleString()} deductible
                           </div>
                         </div>
                         <button onClick={() => setSpousePlan(null)} style={{
                           padding: "6px 14px", borderRadius: 6, border: `1px solid ${COLORS.border}`,
                           background: "#fff", cursor: "pointer",
-                          fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: COLORS.text500,
+                          fontFamily: "'Hanken Grotesk', Helvetica, sans-serif", fontSize: 11, color: COLORS.text500,
                         }}>Edit</button>
                       </div>
                     )}
